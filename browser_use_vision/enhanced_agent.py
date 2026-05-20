@@ -3,11 +3,12 @@
 
 继承 browser-use 原生 Agent，在 DOM 处理阶段注入视觉 Grounding 增强。
 设计为无侵入式——不修改原仓库任何代码，通过继承和组合实现增强。
+
+兼容 browser-use 0.12.7 API。
 """
 
 from __future__ import annotations
 
-import io
 import logging
 from typing import Optional
 
@@ -77,32 +78,40 @@ class VisionEnhancedAgent(Agent):
 
 		self._vision_enrichments: list[dict] = []
 
-	async def _prepare_context(self, step_info: AgentStepInfo):
+	async def _prepare_context(self, step_info: AgentStepInfo | None = None):
 		"""
 		重写 _prepare_context，在原有 DOM 处理后注入视觉增强信息。
 
 		流程:
-		1. 调用父类获取 DOM + 截图
+		1. 调用父类获取 BrowserStateSummary
 		2. 评估 DOM 置信度 → 决定是否需要视觉
-		3. 如果需要 → 视觉检测 → 将描述注入 DOM 文本
+		3. 如果需要 → 视觉检测 → 将描述注入消息上下文
 		4. 返回增强后的上下文
 		"""
-		# 1. 原有流程
-		browser_state = await super()._prepare_context(step_info)
+		# 1. 原有流程（返回 BrowserStateSummary）
+		browser_state_summary = await super()._prepare_context(step_info)
 
 		if not self.vision_backend:
-			return browser_state
+			return browser_state_summary
 
-		# 2. 获取当前 DOM 文本
-		# browser_state 包含已序列化的 DOM 信息
-		dom_text = self._extract_dom_text_from_state(browser_state)
+		# 2. 获取 DOM 文本用于置信度评估
+		dom_text = self._extract_dom_text_from_state(browser_state_summary)
 
 		# 3. 自适应决策
 		if self.enable_adaptive:
+			# 判断是否处于循环（通过 loop_detector 的重复计数和停滞计数）
+			loop_detected = False
+			if hasattr(self.state, 'loop_detector'):
+				ld = self.state.loop_detector
+				loop_detected = (
+					getattr(ld, 'max_repetition_count', 0) >= 3
+					or getattr(ld, 'consecutive_stagnant_pages', 0) >= 2
+				)
+
 			decision = self.adaptive_strategy.decide(
 				serialized_dom=dom_text,
-				consecutive_failures=self.state.consecutive_failures,
-				loop_detected=self.state.loop_detector.is_loop if hasattr(self.state, 'loop_detector') else False,
+				consecutive_failures=getattr(self.state, 'consecutive_failures', 0),
+				loop_detected=loop_detected,
 			)
 		else:
 			decision = VisionDecision.FULL
@@ -110,15 +119,15 @@ class VisionEnhancedAgent(Agent):
 		# 4. 执行视觉增强
 		if decision != VisionDecision.SKIP:
 			try:
-				await self._enrich_with_vision(browser_state, decision)
+				await self._enrich_with_vision(browser_state_summary, decision)
 			except Exception as e:
 				logger.warning(f'Vision enrichment failed (continuing without): {e}')
 
-		return browser_state
+		return browser_state_summary
 
-	async def _enrich_with_vision(self, browser_state, decision: VisionDecision) -> None:
+	async def _enrich_with_vision(self, browser_state_summary, decision: VisionDecision) -> None:
 		"""
-		用视觉模型增强 browser_state
+		用视觉模型增强 browser_state_summary
 
 		将视觉检测结果作为补充信息注入到 Agent 的上下文消息中。
 		"""
@@ -128,8 +137,8 @@ class VisionEnhancedAgent(Agent):
 		if not await self.vision_backend.is_ready():
 			await self.vision_backend.load_model()
 
-		# 获取当前截图
-		screenshot = await self._get_current_screenshot()
+		# 获取当前截图（从 browser_state_summary）
+		screenshot = self._get_screenshot_from_state(browser_state_summary)
 		if not screenshot:
 			return
 
@@ -146,24 +155,25 @@ class VisionEnhancedAgent(Agent):
 
 		# 记录统计
 		self._vision_enrichments.append({
-			'step': self.state.n_steps,
+			'step': getattr(self.state, 'n_steps', 0),
 			'decision': decision.value,
 			'elements_detected': len(elements),
 		})
 		logger.info(f'Vision enrichment: {len(elements)} elements detected (decision={decision.value})')
 
-	async def _get_current_screenshot(self) -> Optional[bytes]:
-		"""获取当前页面截图"""
+	def _get_screenshot_from_state(self, browser_state_summary) -> Optional[bytes]:
+		"""从 BrowserStateSummary 获取截图数据"""
 		try:
-			screenshot = await self.browser_session.take_screenshot()
+			screenshot = getattr(browser_state_summary, 'screenshot', None)
+			if screenshot is None:
+				return None
 			if isinstance(screenshot, str):
-				# base64 编码的截图
+				# base64 编码
 				import base64
-
 				return base64.b64decode(screenshot)
 			return screenshot
 		except Exception as e:
-			logger.warning(f'Failed to take screenshot for vision: {e}')
+			logger.warning(f'Failed to get screenshot from state: {e}')
 			return None
 
 	def _format_vision_elements(self, elements: list[DetectedElement]) -> str:
@@ -180,26 +190,37 @@ class VisionEnhancedAgent(Agent):
 
 	def _inject_vision_context(self, vision_text: str) -> None:
 		"""
-		将视觉增强信息注入到 Agent 的消息上下文中
+		将视觉增强信息注入到 Agent 的消息上下文中。
 
-		通过修改 message_manager 的系统消息或追加到当前状态描述中。
+		兼容 browser-use 0.12.7 的 _message_manager API。
 		"""
-		# 追加到当前步的系统提示
-		if hasattr(self, 'message_manager') and self.message_manager:
-			# 作为辅助信息注入
-			self.message_manager.add_state_message(
+		# 尝试 0.12.7 的 _message_manager
+		msg_mgr = getattr(self, '_message_manager', None)
+		if msg_mgr is None:
+			# 回退到旧版 message_manager
+			msg_mgr = getattr(self, 'message_manager', None)
+
+		if msg_mgr and hasattr(msg_mgr, 'add_state_message'):
+			msg_mgr.add_state_message(
 				content=vision_text,
 				role='system',
 			)
+		elif msg_mgr and hasattr(msg_mgr, '_add_message'):
+			# 另一种注入方式
+			from langchain_core.messages import SystemMessage
+			msg_mgr._add_message(SystemMessage(content=vision_text))
 
-	def _extract_dom_text_from_state(self, browser_state) -> str:
-		"""从 browser_state 中提取 DOM 文本用于置信度评估"""
-		if hasattr(browser_state, 'dom_text'):
-			return browser_state.dom_text
-		if hasattr(browser_state, 'serialized_dom'):
-			return browser_state.serialized_dom
-		# fallback: 转字符串
-		return str(browser_state)
+	def _extract_dom_text_from_state(self, browser_state_summary) -> str:
+		"""从 BrowserStateSummary 中提取 DOM 文本用于置信度评估"""
+		# 0.12.7: BrowserStateSummary 有 dom_text 或 serialized_dom
+		if hasattr(browser_state_summary, 'dom_text'):
+			return browser_state_summary.dom_text or ''
+		if hasattr(browser_state_summary, 'serialized_dom'):
+			return browser_state_summary.serialized_dom or ''
+		if hasattr(browser_state_summary, 'element_tree_str'):
+			return browser_state_summary.element_tree_str or ''
+		# fallback
+		return str(browser_state_summary)[:2000]
 
 	@property
 	def vision_stats(self) -> dict:
@@ -207,5 +228,5 @@ class VisionEnhancedAgent(Agent):
 		return {
 			'adaptive_stats': self.adaptive_strategy.stats,
 			'enrichments': self._vision_enrichments,
-			'total_vision_calls': len([e for e in self._vision_enrichments]),
+			'total_vision_calls': len(self._vision_enrichments),
 		}
