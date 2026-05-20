@@ -1,0 +1,105 @@
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+*.whl
+pip-wheel-metadata/
+*.manifest
+*.spec
+
+# =========================
+# Virtual Environments
+# =========================
+.venv/
+venv/
+ENV/
+env/
+
+# =========================
+# Environment & Secrets
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# IDE / Editor
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+.classpath
+
+# =========================
+# OS Generated
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+*.lnk
+
+# =========================
+# Testing & Coverage
+# =========================
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+
+# =========================
+# Logs
+# =========================
+logs/
+*.log
+
+# =========================
+# Models & Large Files
+# =========================
+models/
+*.onnx
+*.pt
+*.pth
+*.bin
+*.safetensors
+*.gguf
+
+# =========================
+# Data / Output
+# =========================
+data/
+output/
+screenshots/
+recordings/
+
+# =========================
+# Jupyter Notebooks
+# =========================
+.ipynb_checkpoints/
+
+# =========================
+# mypy / type checking
+# =========================
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# =========================
+# Distribution / Packaging
+# =========================
+*.tar.gz
+*.zip

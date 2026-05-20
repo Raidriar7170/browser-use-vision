@@ -1,0 +1,14 @@
+[
+  {
+    "name": "simple_page",
+    "error": "Server disconnected without sending a response."
+  },
+  {
+    "name": "medium_page",
+    "error": "[Errno 111] Connection refused"
+  },
+  {
+    "name": "complex_page",
+    "error": "[Errno 111] Connection refused"
+  }
+]

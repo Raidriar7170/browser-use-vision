@@ -1,0 +1,122 @@
+[
+  {
+    "name": "simple_form",
+    "confidence": 1.0,
+    "decision": "skip",
+    "expected": "skip",
+    "match": true,
+    "description": "简单表单 — DOM 信息充足",
+    "signals": {
+      "interactive": 4,
+      "unlabeled_buttons": 0,
+      "no_alt_images": 0,
+      "icons": 0,
+      "custom_components": 0
+    }
+  },
+  {
+    "name": "icon_toolbar",
+    "confidence": 0.4900000000000001,
+    "decision": "full",
+    "expected": "full",
+    "match": true,
+    "description": "图标工具栏 — DOM 严重缺失语义",
+    "signals": {
+      "interactive": 5,
+      "unlabeled_buttons": 3,
+      "no_alt_images": 4,
+      "icons": 7,
+      "custom_components": 0
+    }
+  },
+  {
+    "name": "ecommerce_grid",
+    "confidence": 1.0,
+    "decision": "skip",
+    "expected": "lightweight",
+    "match": false,
+    "description": "电商网格 — 部分图片缺 alt",
+    "signals": {
+      "interactive": 3,
+      "unlabeled_buttons": 0,
+      "no_alt_images": 2,
+      "icons": 0,
+      "custom_components": 0
+    }
+  },
+  {
+    "name": "custom_spa",
+    "confidence": 0.75,
+    "decision": "lightweight",
+    "expected": "full",
+    "match": false,
+    "description": "自定义 SPA — 大量自定义组件",
+    "signals": {
+      "interactive": 0,
+      "unlabeled_buttons": 0,
+      "no_alt_images": 0,
+      "icons": 0,
+      "custom_components": 12
+    }
+  },
+  {
+    "name": "news_article",
+    "confidence": 1.0,
+    "decision": "skip",
+    "expected": "skip",
+    "match": true,
+    "description": "新闻文章 — 纯文本内容充足",
+    "signals": {
+      "interactive": 3,
+      "unlabeled_buttons": 0,
+      "no_alt_images": 0,
+      "icons": 0,
+      "custom_components": 0
+    }
+  },
+  {
+    "name": "mixed_dashboard",
+    "confidence": 0.88,
+    "decision": "skip",
+    "expected": "lightweight",
+    "match": false,
+    "description": "管理面板 — 混合内容",
+    "signals": {
+      "interactive": 5,
+      "unlabeled_buttons": 2,
+      "no_alt_images": 2,
+      "icons": 2,
+      "custom_components": 0
+    }
+  },
+  {
+    "name": "canvas_app",
+    "confidence": 0.7,
+    "decision": "lightweight",
+    "expected": "full",
+    "match": false,
+    "description": "Canvas 应用 — DOM 几乎无信息",
+    "signals": {
+      "interactive": 5,
+      "unlabeled_buttons": 5,
+      "no_alt_images": 0,
+      "icons": 0,
+      "custom_components": 0
+    }
+  },
+  {
+    "name": "accessible_site",
+    "confidence": 1.0,
+    "decision": "skip",
+    "expected": "skip",
+    "match": true,
+    "description": "无障碍网站 — ARIA 标签完善",
+    "signals": {
+      "interactive": 6,
+      "unlabeled_buttons": 0,
+      "no_alt_images": 0,
+      "icons": 0,
+      "custom_components": 0
+    }
+  }
+]

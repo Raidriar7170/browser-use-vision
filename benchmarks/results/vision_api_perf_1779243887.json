@@ -1,0 +1,26 @@
+[
+  {
+    "name": "simple_page",
+    "resolution": "640x480",
+    "ui_elements": 5,
+    "detected": 1,
+    "api_time_ms": 3227.1981239318848,
+    "total_time_ms": 3485.030174255371
+  },
+  {
+    "name": "medium_page",
+    "resolution": "1280x720",
+    "ui_elements": 15,
+    "detected": 1,
+    "api_time_ms": 1723.5913276672363,
+    "total_time_ms": 1736.084222793579
+  },
+  {
+    "name": "complex_page",
+    "resolution": "1920x1080",
+    "ui_elements": 30,
+    "detected": 1,
+    "api_time_ms": 3216.010570526123,
+    "total_time_ms": 3228.745460510254
+  }
+]
