@@ -78,7 +78,7 @@ class VisionEnhancedAgent(Agent):
 
 		self._vision_enrichments: list[dict] = []
 
-	async def _prepare_context(self, step_info: AgentStepInfo | None = None):
+	async def _prepare_context(self, step_info: AgentStepInfo | None = None):  # type: ignore[override]
 		"""
 		重写 _prepare_context，在原有 DOM 处理后注入视觉增强信息。
 
