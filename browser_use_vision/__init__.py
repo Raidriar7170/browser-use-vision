@@ -7,17 +7,18 @@ from browser_use_vision.grounding.base import DetectedElement, VisualGroundingBa
 
 
 def __getattr__(name: str):
-	"""Lazy import VisionEnhancedAgent to avoid requiring browser_use at import time."""
-	if name == 'VisionEnhancedAgent':
-		from browser_use_vision.enhanced_agent import VisionEnhancedAgent
-		return VisionEnhancedAgent
-	raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
+    """Lazy import VisionEnhancedAgent to avoid requiring browser_use at import time."""
+    if name == "VisionEnhancedAgent":
+        from browser_use_vision.enhanced_agent import VisionEnhancedAgent
+
+        return VisionEnhancedAgent
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 __all__ = [
-	'VisionEnhancedAgent',
-	'DetectedElement',
-	'VisualGroundingBackend',
+    "VisionEnhancedAgent",
+    "DetectedElement",
+    "VisualGroundingBackend",
 ]
 
-__version__ = '0.1.0'
+__version__ = "0.1.0"

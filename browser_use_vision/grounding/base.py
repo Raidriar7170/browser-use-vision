@@ -7,4 +7,4 @@ re-export from grounding package for clean imports:
 
 from browser_use_vision.grounding import DetectedElement, VisualGroundingBackend
 
-__all__ = ['DetectedElement', 'VisualGroundingBackend']
+__all__ = ["DetectedElement", "VisualGroundingBackend"]
