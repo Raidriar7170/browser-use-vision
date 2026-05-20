@@ -1,0 +1,56 @@
+ yaml
+    name: Tests
+
+    on:
+      push:
+        branches: [main, develop]
+      pull_request:
+        branches: [main]
+
+    jobs:
+      test:
+        runs-on: ubuntu-latest
+        strategy:
+          matrix:
+            python-version: ["3.11"]
+
+        steps:
+          - name: Checkout repository
+            uses: actions/checkout@v4
+
+          - name: Set up Python ${{ matrix.python-version }}
+            uses: actions/setup-python@v5
+            with:
+              python-version: ${{ matrix.python-version }}
+
+          - name: Cache pip dependencies
+            uses: actions/cache@v4
+            with:
+              path: ~/.cache/pip
+              key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml') }}
+              restore-keys: |
+                ${{ runner.os }}-pip-
+
+          - name: Install test dependencies
+            run: |
+              python -m pip install --upgrade pip
+              pip install pytest pytest-asyncio pydantic httpx Pillow
+
+          - name: Run unit tests (CPU only, no browser-use needed)
+            env:
+              CUDA_VISIBLE_DEVICES: ""
+            run: |
+              PYTHONPATH=. pytest tests/test_adaptive.py tests/test_grounding.py -v --tb=short
+
+      lint:
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v4
+          - uses: actions/setup-python@v5
+            with:
+              python-version: "3.11"
+          - run: pip install ruff
+          - name: Ruff check
+            run: ruff check browser_use_vision/ tests/ --select E,F,I,W --ignore E501
+          - name: Ruff format check
+            run: ruff format --check browser_use_vision/ tests/
