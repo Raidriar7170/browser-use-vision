@@ -203,3 +203,106 @@ class FlorenceBackend(VisualGroundingBackend):
             data = resp.json()
 
         return [DetectedElement(**el) for el in data.get("elements", [])]
+
+    async def ocr_with_region(self, screenshot: bytes) -> list[dict]:
+        """
+        使用 Florence-2 <OCR_WITH_REGION> 识别截图中的文字及位置
+
+        Returns:
+            [{text: str, bbox: [x1, y1, x2, y2]}]  坐标归一化到 [0,1]
+        """
+        if not self._loaded:
+            await self.load_model()
+
+        if self.remote_url:
+            return await self._ocr_remote(screenshot)
+
+        image = Image.open(io.BytesIO(screenshot)).convert("RGB")
+        w, h = image.size
+
+        result = await self._run_inference(image, "<OCR_WITH_REGION>")
+        parsed = result.get("<OCR_WITH_REGION>", {})
+        quad_boxes = parsed.get("quad_boxes", [])
+        labels = parsed.get("labels", [])
+
+        text_regions = []
+        for quad, label in zip(quad_boxes, labels):
+            if len(quad) >= 8:
+                x1 = min(quad[0], quad[6]) / w
+                y1 = min(quad[1], quad[3]) / h
+                x2 = max(quad[2], quad[4]) / w
+                y2 = max(quad[5], quad[7]) / h
+                text_regions.append({
+                    "text": label.strip(),
+                    "bbox": [x1, y1, x2, y2],
+                })
+
+        logger.info(f"Florence-2 OCR: {len(text_regions)} text regions found")
+        return text_regions
+
+    async def dense_region_caption(self, screenshot: bytes) -> list[dict]:
+        """
+        使用 Florence-2 <DENSE_REGION_CAPTION> 生成区域描述
+
+        Returns:
+            [{caption: str, bbox: [x1, y1, x2, y2]}]  坐标归一化到 [0,1]
+        """
+        if not self._loaded:
+            await self.load_model()
+
+        if self.remote_url:
+            return await self._regions_remote(screenshot)
+
+        image = Image.open(io.BytesIO(screenshot)).convert("RGB")
+        w, h = image.size
+
+        result = await self._run_inference(image, "<DENSE_REGION_CAPTION>")
+        parsed = result.get("<DENSE_REGION_CAPTION>", {})
+        bboxes = parsed.get("bboxes", [])
+        labels = parsed.get("labels", [])
+
+        regions = []
+        for bbox, label in zip(bboxes, labels):
+            if len(bbox) >= 4:
+                x1, y1, x2, y2 = bbox[0] / w, bbox[1] / h, bbox[2] / w, bbox[3] / h
+                regions.append({
+                    "caption": label.strip(),
+                    "bbox": [x1, y1, x2, y2],
+                })
+
+        logger.info(f"Florence-2 Dense Caption: {len(regions)} regions found")
+        return regions
+
+    async def _ocr_remote(self, screenshot: bytes) -> list[dict]:
+        """通过远程 API 调用 OCR"""
+        import base64
+
+        import httpx
+
+        img_b64 = base64.b64encode(screenshot).decode()
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.post(
+                f"{self.remote_url}/ocr",
+                json={"image": img_b64},
+            )
+            resp.raise_for_status()
+            data = resp.json()
+
+        return data.get("text_regions", [])
+
+    async def _regions_remote(self, screenshot: bytes) -> list[dict]:
+        """通过远程 API 调用 Dense Region Caption"""
+        import base64
+
+        import httpx
+
+        img_b64 = base64.b64encode(screenshot).decode()
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.post(
+                f"{self.remote_url}/regions",
+                json={"image": img_b64},
+            )
+            resp.raise_for_status()
+            data = resp.json()
+
+        return data.get("regions", [])

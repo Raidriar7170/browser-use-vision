@@ -162,7 +162,14 @@ class VisionEnhancedAgent(Agent):
         """
         用视觉模型增强 browser_state_summary
 
-        将视觉检测结果作为补充信息注入到 Agent 的上下文消息中。
+        策略:
+        - FULL: OCR + Dense Region Caption（完整视觉信息）
+        - LIGHTWEIGHT: 仅 OCR（快速补充文字信息）
+
+        OCR 结果特别有用于:
+        - icon-only 按钮（DOM 中无文字，但视觉上有图标含义）
+        - canvas/SVG 渲染的文字
+        - 图片中嵌入的文字内容
         """
         if not self.vision_backend:
             return
@@ -175,15 +182,46 @@ class VisionEnhancedAgent(Agent):
         if not screenshot:
             return
 
-        # 视觉检测
-        elements = await self.vision_backend.detect_elements(screenshot)
-        if not elements:
+        vision_parts = []
+        total_items = 0
+
+        # OCR with Region — 识别页面上所有文字及位置
+        if hasattr(self.vision_backend, "ocr_with_region"):
+            try:
+                ocr_results = await self.vision_backend.ocr_with_region(screenshot)
+                if ocr_results:
+                    ocr_text = self._format_ocr_results(ocr_results)
+                    vision_parts.append(ocr_text)
+                    total_items += len(ocr_results)
+            except Exception as e:
+                logger.warning(f"OCR failed: {e}")
+
+        # Dense Region Caption — 仅在 FULL 模式下执行
+        if decision == VisionDecision.FULL and hasattr(self.vision_backend, "dense_region_caption"):
+            try:
+                region_results = await self.vision_backend.dense_region_caption(screenshot)
+                if region_results:
+                    region_text = self._format_region_results(region_results)
+                    vision_parts.append(region_text)
+                    total_items += len(region_results)
+            except Exception as e:
+                logger.warning(f"Dense region caption failed: {e}")
+
+        # 回退：如果后端不支持 OCR，用旧的 detect_elements
+        if not vision_parts:
+            try:
+                elements = await self.vision_backend.detect_elements(screenshot)
+                if elements:
+                    vision_parts.append(self._format_vision_elements(elements))
+                    total_items += len(elements)
+            except Exception as e:
+                logger.warning(f"Element detection failed: {e}")
+
+        if not vision_parts:
             return
 
-        # 构建视觉增强文本
-        vision_text = self._format_vision_elements(elements)
-
-        # 注入到消息中
+        # 合并所有视觉信息并注入
+        vision_text = "\n\n".join(vision_parts)
         self._inject_vision_context(vision_text)
 
         # 记录统计
@@ -191,10 +229,10 @@ class VisionEnhancedAgent(Agent):
             {
                 "step": getattr(self.state, "n_steps", 0),
                 "decision": decision.value,
-                "elements_detected": len(elements),
+                "items_detected": total_items,
             }
         )
-        logger.info(f"Vision enrichment: {len(elements)} elements detected (decision={decision.value})")
+        logger.info(f"Vision enrichment: {total_items} items (decision={decision.value})")
 
     def _get_screenshot_from_state(self, browser_state_summary) -> Optional[bytes]:
         """从 BrowserStateSummary 获取截图数据"""
@@ -222,6 +260,24 @@ class VisionEnhancedAgent(Agent):
                 line += f' text="{el.ocr_text}"'
             line += f" (conf={el.confidence:.2f})"
             lines.append(line)
+        return "\n".join(lines)
+
+    def _format_ocr_results(self, ocr_results: list[dict]) -> str:
+        """将 OCR 结果格式化为 LLM 可读的文本"""
+        lines = ["[Vision OCR Results - text detected in screenshot by Florence-2]"]
+        for i, r in enumerate(ocr_results):
+            text = r.get("text", "")
+            bbox = r.get("bbox", [0, 0, 0, 0])
+            lines.append(f'  OCR[{i}]: "{text}" at ({bbox[0]:.3f},{bbox[1]:.3f},{bbox[2]:.3f},{bbox[3]:.3f})')
+        return "\n".join(lines)
+
+    def _format_region_results(self, region_results: list[dict]) -> str:
+        """将 Dense Region Caption 结果格式化为 LLM 可读的文本"""
+        lines = ["[Vision Region Descriptions - areas identified by Florence-2]"]
+        for i, r in enumerate(region_results):
+            caption = r.get("caption", "")
+            bbox = r.get("bbox", [0, 0, 0, 0])
+            lines.append(f'  Region[{i}]: "{caption}" at ({bbox[0]:.3f},{bbox[1]:.3f},{bbox[2]:.3f},{bbox[3]:.3f})')
         return "\n".join(lines)
 
     def _inject_vision_context(self, vision_text: str) -> None:
