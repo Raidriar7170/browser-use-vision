@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Sales Chart</title>
+<style>
+  body { font-family: sans-serif; background: #0d1117; color: #c9d1d9; padding: 40px; }
+  canvas { background: #161b22; border-radius: 12px; border: 1px solid #30363d; }
+  .controls { margin-top: 20px; }
+  button { background: #238636; color: white; border: none; padding: 8px 16px;
+           border-radius: 6px; cursor: pointer; margin: 4px; }
+  button.active { background: #1f6feb; }
+  #info { margin-top: 12px; padding: 10px; background: #161b22; border-radius: 8px; min-height: 40px; }
+</style></head>
+<body>
+<h1>📈 Quarterly Revenue Chart</h1>
+<canvas id="chart" width="800" height="400"></canvas>
+<div class="controls">
+  <button onclick="showQuarter('Q1')" class="active">Q1</button>
+  <button onclick="showQuarter('Q2')">Q2</button>
+  <button onclick="showQuarter('Q3')">Q3</button>
+  <button onclick="showQuarter('Q4')">Q4</button>
+  <button onclick="doAction('download_report')">Download Report</button>
+</div>
+<div id="info">Showing Q1 2024 data</div>
+
+<script>
+window.actions = [];
+const quarters = {
+    Q1: [120, 145, 132, 168],
+    Q2: [155, 178, 162, 190],
+    Q3: [180, 195, 210, 225],
+    Q4: [200, 215, 230, 260],
+};
+
+function drawChart(q) {
+    const canvas = document.getElementById('chart');
+    const ctx = canvas.getContext('2d');
+    const data = quarters[q];
+    ctx.clearRect(0, 0, 800, 400);
+
+    // Grid
+    ctx.strokeStyle = '#30363d';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 5; i++) {
+        const y = 50 + i * 70;
+        ctx.beginPath(); ctx.moveTo(80, y); ctx.lineTo(750, y); ctx.stroke();
+        ctx.fillStyle = '#8b949e';
+        ctx.font = '12px sans-serif';
+        ctx.fillText('$' + (300 - i * 60) + 'K', 20, y + 4);
+    }
+
+    // Bars
+    const months = ['Jan', 'Feb', 'Mar', 'Apr'];
+    const colors = ['#58a6ff', '#3fb950', '#d29922', '#f85149'];
+    data.forEach((val, i) => {
+        const x = 120 + i * 160;
+        const h = val * 1.2;
+        const y = 380 - h;
+        ctx.fillStyle = colors[i];
+        ctx.fillRect(x, y, 80, h);
+        ctx.fillStyle = '#c9d1d9';
+        ctx.font = 'bold 14px sans-serif';
+        ctx.fillText('$' + val + 'K', x + 15, y - 10);
+        ctx.fillText(months[i], x + 25, 395);
+    });
+
+    // Title
+    ctx.fillStyle = '#c9d1d9';
+    ctx.font = 'bold 16px sans-serif';
+    ctx.fillText(q + ' 2024 Revenue', 320, 30);
+}
+
+function showQuarter(q) {
+    window.actions.push('show_' + q);
+    drawChart(q);
+    document.getElementById('info').textContent = 'Showing ' + q + ' 2024 data';
+    document.querySelectorAll('.controls button').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+}
+
+function doAction(name) {
+    window.actions.push(name);
+    document.getElementById('info').textContent = 'Action: ' + name;
+}
+
+drawChart('Q1');
+</script>
+</body></html>

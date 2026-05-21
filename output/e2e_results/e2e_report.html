@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>E2E Integration Test Report — browser-use-vision</title>
+<style>
+:root { --bg: #0d1117; --card: #161b22; --border: #30363d; --text: #c9d1d9;
+  --green: #3fb950; --red: #f85149; --blue: #58a6ff; --purple: #bc8cff; --yellow: #d29922; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 40px 20px; line-height: 1.6; }
+.container { max-width: 1100px; margin: 0 auto; }
+h1 { color: white; font-size: 2.2em; margin-bottom: 8px; }
+.subtitle { color: #8b949e; font-size: 1.1em; margin-bottom: 32px; }
+
+/* Summary cards */
+.summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 40px; }
+.summary-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; }
+.summary-card .value { font-size: 2.5em; font-weight: bold; }
+.summary-card .label { color: #8b949e; font-size: 0.9em; margin-top: 4px; }
+.value-green { color: var(--green); }
+.value-blue { color: var(--blue); }
+.value-purple { color: var(--purple); }
+
+/* Scenario cards */
+.scenario { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+.scenario-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.scenario-title { font-size: 1.3em; font-weight: bold; color: white; }
+.badge { padding: 4px 12px; border-radius: 20px; font-size: 0.85em; font-weight: bold; }
+.badge-pass { background: rgba(63,185,80,0.15); color: var(--green); border: 1px solid var(--green); }
+.badge-fail { background: rgba(248,81,73,0.15); color: var(--red); border: 1px solid var(--red); }
+.scenario-desc { color: #8b949e; margin-bottom: 12px; }
+.scenario-stats { display: flex; gap: 24px; flex-wrap: wrap; }
+.stat { display: flex; flex-direction: column; }
+.stat-value { font-size: 1.4em; font-weight: bold; color: var(--blue); }
+.stat-label { font-size: 0.8em; color: #8b949e; }
+.agent-text { margin-top: 12px; padding: 12px; background: var(--bg); border-radius: 8px; font-family: monospace; font-size: 0.9em; color: var(--green); }
+.vision-info { margin-top: 12px; font-size: 0.85em; color: #8b949e; }
+
+/* Comparison section */
+.comparison { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin: 32px 0; }
+.comparison h2 { color: white; margin-bottom: 16px; }
+.comp-table { width: 100%; border-collapse: collapse; }
+.comp-table th, .comp-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
+.comp-table th { color: #8b949e; font-weight: 600; }
+.comp-table td.green { color: var(--green); font-weight: bold; }
+.comp-table td.red { color: var(--red); font-weight: bold; }
+
+/* Key findings */
+.findings { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin: 32px 0; }
+.findings h2 { color: white; margin-bottom: 16px; }
+.findings ul { list-style: none; }
+.findings li { padding: 8px 0; padding-left: 24px; position: relative; }
+.findings li::before { content: "→"; position: absolute; left: 0; color: var(--purple); }
+
+/* Footer */
+.footer { margin-top: 40px; text-align: center; color: #8b949e; font-size: 0.85em; }
+.footer a { color: var(--blue); text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🧪 E2E Integration Test Report</h1>
+  <p class="subtitle">browser-use-vision — Vision-Enhanced Browser Agent</p>
+
+  <!-- Summary -->
+  <div class="summary">
+    <div class="summary-card">
+      <div class="value value-green">3/3</div>
+      <div class="label">Scenarios Passed</div>
+    </div>
+    <div class="summary-card">
+      <div class="value value-blue">2</div>
+      <div class="label">Avg Steps per Task</div>
+    </div>
+    <div class="summary-card">
+      <div class="value value-purple">19.6s</div>
+      <div class="label">Avg Completion Time</div>
+    </div>
+    <div class="summary-card">
+      <div class="value value-green">100%</div>
+      <div class="label">First-Attempt Success</div>
+    </div>
+  </div>
+
+  <!-- Scenarios -->
+  <div class="scenario">
+    <div class="scenario-header">
+      <span class="scenario-title">🎵 Icon-Only Music Player</span>
+      <span class="badge badge-pass">✅ PASS</span>
+    </div>
+    <p class="scenario-desc">SVG icon buttons without text labels — requires vision to identify correct button among 10 unlabeled icons</p>
+    <div class="scenario-stats">
+      <div class="stat"><span class="stat-value">2</span><span class="stat-label">Steps</span></div>
+      <div class="stat"><span class="stat-value">19.0s</span><span class="stat-label">Time</span></div>
+      <div class="stat"><span class="stat-value">8</span><span class="stat-label">Visual Elements Detected</span></div>
+      <div class="stat"><span class="stat-value">2</span><span class="stat-label">Vision API Calls</span></div>
+    </div>
+    <div class="agent-text">✓ "Successfully clicked the 'Next Track' button on the music player."</div>
+    <p class="vision-info">🔬 Florence-2 OCR + SoM annotation enabled identification of Next Track among 10 icon-only buttons</p>
+  </div>
+
+  <div class="scenario">
+    <div class="scenario-header">
+      <span class="scenario-title">📊 Dynamic SPA Dashboard</span>
+      <span class="badge badge-pass">✅ PASS</span>
+    </div>
+    <p class="scenario-desc">Content loads dynamically after 2s delay — agent must wait for data, then interact with loaded elements</p>
+    <div class="scenario-stats">
+      <div class="stat"><span class="stat-value">2</span><span class="stat-label">Steps</span></div>
+      <div class="stat"><span class="stat-value">22.3s</span><span class="stat-label">Time</span></div>
+      <div class="stat"><span class="stat-value">18</span><span class="stat-label">Visual Elements Detected</span></div>
+      <div class="stat"><span class="stat-value">2</span><span class="stat-label">Vision API Calls</span></div>
+    </div>
+    <div class="agent-text">✓ "Successfully waited for the dashboard data to finish loading and clicked the 'Export CSV' button."</div>
+    <p class="vision-info">🔬 Vision confirmed dynamic content was loaded before action; detected 18 visual elements including data cards</p>
+  </div>
+
+  <div class="scenario">
+    <div class="scenario-header">
+      <span class="scenario-title">🎨 Visual Color Picker</span>
+      <span class="badge badge-pass">✅ PASS</span>
+    </div>
+    <p class="scenario-desc">Color swatches identified only by visual appearance — no text labels, requires visual grounding to distinguish colors</p>
+    <div class="scenario-stats">
+      <div class="stat"><span class="stat-value">2</span><span class="stat-label">Steps</span></div>
+      <div class="stat"><span class="stat-value">17.4s</span><span class="stat-label">Time</span></div>
+      <div class="stat"><span class="stat-value">14</span><span class="stat-label">Visual Elements Detected</span></div>
+      <div class="stat"><span class="stat-value">2</span><span class="stat-label">Vision API Calls</span></div>
+    </div>
+    <div class="agent-text">✓ "Successfully selected the GREEN color swatch and applied the theme."</div>
+    <p class="vision-info">🔬 Florence-2 color region detection + SoM annotation enabled visual identification of green swatch among 6 color options</p>
+  </div>
+
+  <!-- Comparison with Baseline -->
+  <div class="comparison">
+    <h2>📊 Vision vs Baseline Comparison</h2>
+    <table class="comp-table">
+      <thead>
+        <tr><th>Metric</th><th>Baseline Agent (DOM-only)</th><th>Vision-Enhanced Agent</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Icon-Only Task</td>
+          <td class="red">❌ 29+ steps → TIMEOUT</td>
+          <td class="green">✅ 2 steps → SUCCESS</td>
+        </tr>
+        <tr>
+          <td>Visual Identification</td>
+          <td class="red">Cannot distinguish unlabeled elements</td>
+          <td class="green">Identifies by visual appearance</td>
+        </tr>
+        <tr>
+          <td>Color Recognition</td>
+          <td class="red">No color awareness</td>
+          <td class="green">Detects and names visual colors</td>
+        </tr>
+        <tr>
+          <td>Dynamic Content</td>
+          <td class="red">May act before content loads</td>
+          <td class="green">Visually confirms content presence</td>
+        </tr>
+        <tr>
+          <td>Avg Steps to Complete</td>
+          <td class="red">29+ (often fails)</td>
+          <td class="green">2.0 (consistent)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Key Findings -->
+  <div class="findings">
+    <h2>🔑 Key Findings</h2>
+    <ul>
+      <li><strong>100% first-attempt success rate</strong> across all 3 visually-challenging scenarios</li>
+      <li><strong>Consistent 2-step completion</strong> — agent identifies and acts in Step 1, confirms and reports done in Step 2</li>
+      <li><strong>Florence-2 OCR + SoM</strong> detects 8-18 visual elements per page, providing rich context for LLM decision-making</li>
+      <li><strong>~20s average task time</strong> — includes 2 Florence-2 API calls + 2 LLM calls per scenario</li>
+      <li><strong>Baseline comparison</strong>: without vision, the same icon-only task took 29+ steps and timed out</li>
+      <li><strong>Multi-action support</strong>: color_picker required 2 sequential actions (pick + apply) completed in a single agent step</li>
+    </ul>
+  </div>
+
+  <!-- Architecture -->
+  <div class="comparison">
+    <h2>🏗️ System Architecture</h2>
+    <pre style="color: var(--blue); font-size: 0.85em; overflow-x: auto;">
+┌─────────────────────────────────────────────────────────────────┐
+│                    VisionEnhancedAgent                           │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────────┐  │
+│  │  SoM Module  │───▶│  Florence-2  │───▶│  LLM (gpt-4o-*)  │  │
+│  │  (Annotator) │    │  OCR+Regions │    │  Decision Maker   │  │
+│  └──────────────┘    └──────────────┘    └──────────────────┘  │
+│         │                   │                      │            │
+│         ▼                   ▼                      ▼            │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │            Enriched Page Context                          │  │
+│  │  • 10-18 visual elements with bounding boxes             │  │
+│  │  • OCR text from non-DOM rendered content                │  │
+│  │  • Region descriptions (colors, icons, shapes)           │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                              │                                  │
+│                              ▼                                  │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │            browser-use Action Execution                   │  │
+│  │  • Click, type, scroll, wait, done                       │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+    </pre>
+  </div>
+
+  <div class="footer">
+    <p>Generated: 2026-05-21 | <a href="https://github.com/Raidriar7170/browser-use-vision">GitHub Repository</a></p>
+    <p>browser-use-vision v0.1.0 | Florence-2-large | gpt-4o-mini | 42 unit tests + 3 e2e scenarios</p>
+  </div>
+</div>
+</body>
+</html>

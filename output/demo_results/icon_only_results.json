@@ -1,0 +1,31 @@
+[
+  {
+    "mode": "vision",
+    "success": false,
+    "steps": 2,
+    "elapsed": 28.02,
+    "actions": [],
+    "vision_stats": {
+      "adaptive_stats": {
+        "total_steps": 0,
+        "vision_calls": 0,
+        "skip_calls": 0,
+        "vision_ratio": 0,
+        "savings_ratio": 0
+      },
+      "enrichments": [
+        {
+          "step": 1,
+          "decision": "full",
+          "items_detected": 8
+        },
+        {
+          "step": 2,
+          "decision": "full",
+          "items_detected": 9
+        }
+      ],
+      "total_vision_calls": 2
+    }
+  }
+]

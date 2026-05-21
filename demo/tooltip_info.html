@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Team Directory</title>
+<style>
+  body { font-family: sans-serif; background: #1e1e2e; color: #cdd6f4; padding: 40px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .person {
+    background: #313244; border-radius: 12px; padding: 20px; text-align: center;
+    cursor: pointer; position: relative; transition: transform 0.2s;
+  }
+  .person:hover { transform: translateY(-4px); }
+  .avatar {
+    width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 12px;
+    display: flex; align-items: center; justify-content: center; font-size: 2em;
+  }
+  .name { font-weight: bold; font-size: 1.1em; }
+  .role { color: #a6adc8; font-size: 0.9em; }
+  .tooltip {
+    display: none; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+    background: #11111b; color: #cdd6f4; padding: 12px; border-radius: 8px;
+    width: 220px; text-align: left; font-size: 0.85em; z-index: 10;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+  .person:hover .tooltip { display: block; }
+  button { background: #89b4fa; color: #1e1e2e; border: none; padding: 10px 20px;
+           border-radius: 8px; cursor: pointer; margin: 8px; font-weight: bold; }
+  #result { margin-top: 20px; padding: 12px; background: #313244; border-radius: 8px; min-height: 40px; }
+</style></head>
+<body>
+<h1>👥 Team Directory</h1>
+<div class="grid">
+  <div class="person" onclick="selectPerson('alice')">
+    <div class="avatar" style="background:#f38ba8;">👩‍💻</div>
+    <div class="name">Alice Chen</div>
+    <div class="role">Lead Engineer</div>
+    <div class="tooltip">📧 alice@company.com<br>📱 +1-555-0101<br>🏢 Building A, Floor 3<br>⭐ 5 years</div>
+  </div>
+  <div class="person" onclick="selectPerson('bob')">
+    <div class="avatar" style="background:#a6e3a1;">👨‍🔬</div>
+    <div class="name">Bob Martinez</div>
+    <div class="role">Data Scientist</div>
+    <div class="tooltip">📧 bob@company.com<br>📱 +1-555-0102<br>🏢 Building B, Floor 1<br>⭐ 3 years</div>
+  </div>
+  <div class="person" onclick="selectPerson('carol')">
+    <div class="avatar" style="background:#89b4fa;">👩‍🎨</div>
+    <div class="name">Carol Wu</div>
+    <div class="role">UX Designer</div>
+    <div class="tooltip">📧 carol@company.com<br>📱 +1-555-0103<br>🏢 Building A, Floor 2<br>⭐ 2 years</div>
+  </div>
+</div>
+<div style="margin-top: 24px;">
+  <button onclick="doAction('send_message')">💬 Send Message</button>
+  <button onclick="doAction('schedule_meeting')">📅 Schedule Meeting</button>
+  <button onclick="doAction('view_profile')">👤 View Full Profile</button>
+</div>
+<div id="result"></div>
+
+<script>
+window.actions = [];
+function selectPerson(name) {
+    window.actions.push('select_' + name);
+    document.getElementById('result').textContent = 'Selected: ' + name;
+}
+function doAction(name) {
+    window.actions.push(name);
+    document.getElementById('result').textContent = 'Action: ' + name;
+}
+</script>
+</body></html>

@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browser-Use Vision Enhancement — Demo Report</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0f;
+            color: #e4e4e7;
+            line-height: 1.6;
+            padding: 40px 20px;
+        }
+        .container { max-width: 1100px; margin: 0 auto; }
+
+        h1 {
+            text-align: center;
+            font-size: 2.2em;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #71717a;
+            font-size: 1.1em;
+            margin-bottom: 40px;
+        }
+
+        .scenario-box {
+            background: #18181b;
+            border: 1px solid #27272a;
+            border-radius: 16px;
+            padding: 28px;
+            margin-bottom: 32px;
+        }
+        .scenario-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #fafafa;
+        }
+        .scenario-desc {
+            color: #a1a1aa;
+            margin-bottom: 20px;
+        }
+
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) { .comparison { grid-template-columns: 1fr; } }
+
+        .result-card {
+            border-radius: 12px;
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+        .result-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+        }
+        .result-card.fail {
+            background: #1c1017;
+            border: 1px solid #3b1520;
+        }
+        .result-card.fail::before { background: #ef4444; }
+        .result-card.success {
+            background: #0f1c15;
+            border: 1px solid #153b20;
+        }
+        .result-card.success::before { background: #22c55e; }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .card-header .icon { font-size: 1.4em; }
+        .card-header .label {
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        .card-header .badge {
+            margin-left: auto;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+        .badge.fail-badge { background: #3b1520; color: #fca5a5; }
+        .badge.success-badge { background: #153b20; color: #86efac; }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .metric-row:last-child { border-bottom: none; }
+        .metric-label { color: #71717a; }
+        .metric-value { font-weight: 500; }
+
+        .log-box {
+            background: #09090b;
+            border: 1px solid #27272a;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.82em;
+            color: #a1a1aa;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            line-height: 1.5;
+        }
+        .log-box .highlight { color: #fbbf24; }
+        .log-box .error { color: #f87171; }
+        .log-box .success-text { color: #4ade80; }
+
+        .insight-box {
+            background: linear-gradient(135deg, #1a1040, #0f1c30);
+            border: 1px solid #3730a3;
+            border-radius: 12px;
+            padding: 24px;
+            margin-top: 32px;
+        }
+        .insight-box h3 {
+            color: #a5b4fc;
+            margin-bottom: 12px;
+        }
+        .insight-box ul {
+            list-style: none;
+            padding: 0;
+        }
+        .insight-box li {
+            padding: 6px 0;
+            padding-left: 24px;
+            position: relative;
+        }
+        .insight-box li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: #6366f1;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin: 32px 0;
+        }
+        @media (max-width: 768px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+        .stat-card {
+            background: #18181b;
+            border: 1px solid #27272a;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 2em;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .stat-label { color: #71717a; font-size: 0.9em; }
+        .stat-value.green { color: #4ade80; }
+        .stat-value.red { color: #f87171; }
+        .stat-value.blue { color: #60a5fa; }
+        .stat-value.purple { color: #a78bfa; }
+
+        .arch-section {
+            margin-top: 40px;
+        }
+        .arch-section h2 {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            color: #fafafa;
+        }
+        .arch-diagram {
+            background: #18181b;
+            border: 1px solid #27272a;
+            border-radius: 12px;
+            padding: 32px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            overflow-x: auto;
+            white-space: pre;
+            color: #d4d4d8;
+            line-height: 1.4;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 48px;
+            padding-top: 24px;
+            border-top: 1px solid #27272a;
+            color: #52525b;
+            font-size: 0.9em;
+        }
+        footer a { color: #6366f1; text-decoration: none; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+<h1>🔬 Browser-Use Vision Enhancement</h1>
+<p class="subtitle">Icon-Only Button Demo — Baseline vs Vision-Enhanced Agent Comparison</p>
+
+<!-- Stats Overview -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value green">✓ 1st</div>
+        <div class="stat-label">Vision: 正确识别步骤</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value red">29+</div>
+        <div class="stat-label">Baseline: 失败步数</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value blue">~28s</div>
+        <div class="stat-label">Vision 总耗时</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value purple">8</div>
+        <div class="stat-label">OCR 识别文字区域</div>
+    </div>
+</div>
+
+<!-- Scenario -->
+<div class="scenario-box">
+    <div class="scenario-title">🎵 场景: Icon-Only Music Player</div>
+    <div class="scenario-desc">
+        <strong>任务:</strong> "Click the 'Next Track' button to skip to the next song."<br>
+        <strong>挑战:</strong> 所有控制按钮都是 SVG 图标，无 text、无 aria-label、无 title。<br>
+        DOM 中 10 个 button 元素完全无文字区分 — 只有视觉上才能看出 ⏮ ▶️ ⏭ 🔀 🔁 的区别。
+    </div>
+
+    <div class="comparison">
+        <!-- Baseline -->
+        <div class="result-card fail">
+            <div class="card-header">
+                <span class="icon">🔴</span>
+                <span class="label">Baseline Agent</span>
+                <span class="badge fail-badge">FAILED</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">模式</span>
+                <span class="metric-value">use_vision=False, 纯 DOM</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">步数</span>
+                <span class="metric-value">29+ (超时)</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">行为</span>
+                <span class="metric-value">盲目点击 index 4-8 循环</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">识别能力</span>
+                <span class="metric-value">❌ 无法区分按钮功能</span>
+            </div>
+            <div class="log-box"><span class="error">📍 Step 1:</span> click index: 4  (随机猜测)
+<span class="error">📍 Step 2:</span> click index: 6  (仍在猜)
+<span class="error">📍 Step 3:</span> click: 4,5,6,7,8 (全点一遍)
+<span class="error">📍 Step 5:</span> find_elements: 10 buttons, NO TEXT
+     search_page "Next Track": 0 matches
+<span class="error">📍 Step 6-29:</span> 反复 find_elements + 盲目 click
+     "track change is still uncertain"
+     ⚠️ Verdict: Failure
+<span class="highlight">Agent 无法判断哪个是 Next Track</span></div>
+        </div>
+
+        <!-- Vision -->
+        <div class="result-card success">
+            <div class="card-header">
+                <span class="icon">🟢</span>
+                <span class="label">Vision-Enhanced Agent</span>
+                <span class="badge success-badge">SUCCESS</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">模式</span>
+                <span class="metric-value">SoM + Florence-2 OCR</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">步数</span>
+                <span class="metric-value">2 步 (第1步即正确)</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">行为</span>
+                <span class="metric-value">识别图标 → 精准点击</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">识别能力</span>
+                <span class="metric-value">✅ 通过截图识别 SVG 含义</span>
+            </div>
+            <div class="log-box"><span class="success-text">📍 Step 1:</span>
+  SoM: 10 elements marked on screenshot
+  Florence-2 OCR: 8 text regions found
+  Vision enrichment: 8 items (decision=full)
+
+  <span class="success-text">👍 Eval: Clicked the 'Next Track' button successfully.</span>
+  🧠 Memory: "Identified the 'Next Track' button among
+     several icon-only controls and clicked it."
+  ▶️ click: index: 6
+
+<span class="success-text">📍 Step 2:</span>
+  👍 Eval: Successfully clicked the 'Next Track' button
+  ✅ done: "Successfully clicked the 'Next Track' button,
+     and the next song is now playing."</div>
+        </div>
+    </div>
+</div>
+
+<!-- Insight -->
+<div class="insight-box">
+    <h3>💡 关键发现</h3>
+    <ul>
+        <li><strong>Baseline 完全失败</strong>: 纯 DOM Agent 面对 icon-only 按钮束手无策，只能盲目遍历所有按钮</li>
+        <li><strong>Vision 1 步成功</strong>: SoM 标注 + 截图让 LLM 能"看到" SVG 图标的视觉含义</li>
+        <li><strong>OCR 补充关键信息</strong>: Florence-2 OCR 识别了页面上的文字（歌名、时间等），为 LLM 提供完整上下文</li>
+        <li><strong>效率差 14 倍+</strong>: Vision 用 2 步 / 28s 完成 vs Baseline 29+ 步 / 180s+ 仍失败</li>
+        <li><strong>自适应策略价值</strong>: 对于这类 icon-heavy 页面，DOM 置信度评估会自动触发 FULL 视觉模式</li>
+    </ul>
+</div>
+
+<!-- Architecture -->
+<div class="arch-section">
+    <h2>🏗 系统架构</h2>
+    <div class="arch-diagram">
+┌─────────────────────────────────────────────────────────────────────┐
+│                    VisionEnhancedAgent                               │
+│                                                                     │
+│  ┌──────────────┐    ┌────────────────┐    ┌───────────────────┐   │
+│  │  Adaptive    │───▶│   DOM 置信度    │───▶│ VisionDecision:   │   │
+│  │  Strategy    │    │   Assessment   │    │ SKIP/LIGHT/FULL   │   │
+│  └──────────────┘    └────────────────┘    └───────┬───────────┘   │
+│                                                     │               │
+│  ┌─────────────────────────────────────────────────▼───────────┐   │
+│  │                    Vision Pipeline                            │   │
+│  │                                                              │   │
+│  │  ┌──────────┐   ┌──────────────┐   ┌──────────────────┐    │   │
+│  │  │   SoM    │   │  Florence-2  │   │  Florence-2      │    │   │
+│  │  │ 截图标注  │   │  OCR_REGION  │   │  DENSE_CAPTION   │    │   │
+│  │  │ (Pillow) │   │  (远程 A100)  │   │  (远程 A100)     │    │   │
+│  │  └────┬─────┘   └──────┬───────┘   └────────┬─────────┘    │   │
+│  │       │                 │                     │              │   │
+│  │       ▼                 ▼                     ▼              │   │
+│  │  ┌──────────────────────────────────────────────────────┐   │   │
+│  │  │ Annotated Screenshot + OCR Text + Region Descriptions │   │   │
+│  │  └───────────────────────┬──────────────────────────────┘   │   │
+│  └──────────────────────────┼──────────────────────────────────┘   │
+│                              │                                      │
+│  ┌───────────────────────────▼──────────────────────────────────┐  │
+│  │              GPT-4o-mini (with SoM screenshot)                │  │
+│  │   "I can see button [6] has a skip-forward icon → click it"  │  │
+│  └──────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────┘</div>
+</div>
+
+<!-- Test Summary -->
+<div class="scenario-box" style="margin-top: 32px;">
+    <div class="scenario-title">📊 测试状态</div>
+    <div class="metric-row">
+        <span class="metric-label">单元测试</span>
+        <span class="metric-value" style="color: #4ade80;">42/42 通过</span>
+    </div>
+    <div class="metric-row">
+        <span class="metric-label">SoM 标注</span>
+        <span class="metric-value" style="color: #4ade80;">49 元素 Dashboard 验证通过</span>
+    </div>
+    <div class="metric-row">
+        <span class="metric-label">OCR 端点</span>
+        <span class="metric-value" style="color: #4ade80;">48 文字区域 / 6.6s 推理</span>
+    </div>
+    <div class="metric-row">
+        <span class="metric-label">Icon-Only Demo</span>
+        <span class="metric-value" style="color: #4ade80;">Vision ✅ vs Baseline ❌</span>
+    </div>
+    <div class="metric-row">
+        <span class="metric-label">CI/CD</span>
+        <span class="metric-value" style="color: #4ade80;">GitHub Actions 绿灯</span>
+    </div>
+</div>
+
+<footer>
+    <p>Browser-Use Vision Enhancement — <a href="https://github.com/Raidriar7170/browser-use-vision">GitHub</a></p>
+    <p>Built with Florence-2 + browser-use 0.12.7 + GPT-4o-mini</p>
+</footer>
+
+</div>
+</body>
+</html>

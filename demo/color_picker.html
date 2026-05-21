@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Theme Configurator</title>
+<style>
+  body { font-family: sans-serif; background: #0f172a; color: #e2e8f0; padding: 40px; }
+  .section { background: #1e293b; border-radius: 12px; padding: 24px; margin: 16px 0; }
+  h2 { margin-bottom: 16px; }
+  .color-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+  .color-swatch {
+    width: 60px; height: 60px; border-radius: 10px; cursor: pointer; border: 3px solid transparent;
+    transition: all 0.2s; position: relative;
+  }
+  .color-swatch:hover { transform: scale(1.1); }
+  .color-swatch.selected { border-color: white; box-shadow: 0 0 12px rgba(255,255,255,0.3); }
+  .color-swatch::after {
+    content: attr(data-name); position: absolute; bottom: -20px; left: 50%;
+    transform: translateX(-50%); font-size: 0.7em; color: #94a3b8; white-space: nowrap;
+  }
+  .preview { margin-top: 24px; padding: 20px; border-radius: 12px; text-align: center; min-height: 80px; }
+  button { padding: 10px 24px; border: none; border-radius: 8px; cursor: pointer;
+           font-size: 1em; margin: 8px; }
+  .btn-apply { background: #22c55e; color: white; }
+  .btn-reset { background: #64748b; color: white; }
+  #status { margin-top: 16px; padding: 10px; background: #1e293b; border-radius: 8px; }
+</style></head>
+<body>
+<h1>🎨 Theme Configurator</h1>
+<div class="section">
+  <h2>Primary Color</h2>
+  <div class="color-grid" id="colors">
+    <div class="color-swatch" style="background:#ef4444;" data-color="red" data-name="Red" onclick="pickColor(this,'red')"></div>
+    <div class="color-swatch" style="background:#f97316;" data-color="orange" data-name="Orange" onclick="pickColor(this,'orange')"></div>
+    <div class="color-swatch" style="background:#eab308;" data-color="yellow" data-name="Yellow" onclick="pickColor(this,'yellow')"></div>
+    <div class="color-swatch" style="background:#22c55e;" data-color="green" data-name="Green" onclick="pickColor(this,'green')"></div>
+    <div class="color-swatch selected" style="background:#3b82f6;" data-color="blue" data-name="Blue" onclick="pickColor(this,'blue')"></div>
+    <div class="color-swatch" style="background:#8b5cf6;" data-color="purple" data-name="Purple" onclick="pickColor(this,'purple')"></div>
+  </div>
+</div>
+<div class="section">
+  <h2>Preview</h2>
+  <div class="preview" id="preview" style="background: #3b82f6;">
+    <h3>Your Selected Theme</h3>
+    <p>This is how your primary color looks</p>
+  </div>
+</div>
+<div>
+  <button class="btn-apply" onclick="doAction('apply')">✅ Apply Theme</button>
+  <button class="btn-reset" onclick="doAction('reset')">🔄 Reset</button>
+</div>
+<div id="status"></div>
+
+<script>
+window.actions = [];
+function pickColor(el, color) {
+    window.actions.push('pick_' + color);
+    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+    el.classList.add('selected');
+    document.getElementById('preview').style.background = el.style.background;
+    document.getElementById('status').textContent = 'Selected: ' + color;
+}
+function doAction(name) {
+    window.actions.push(name);
+    document.getElementById('status').textContent = 'Action: ' + name;
+}
+</script>
+</body></html>

@@ -83,6 +83,8 @@ models/
 # =========================
 data/
 output/
+!output/e2e_results/
+!output/demo_results/
 screenshots/
 recordings/
 
