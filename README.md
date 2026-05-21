@@ -294,13 +294,33 @@ class VisionEnhancedAgent(Agent):
 
 ## 📊 Performance / 性能
 
+### Real-World Benchmark (6 tasks, Baseline vs Vision-Enhanced)
+
+| Task | Category | Baseline | Vision | Winner |
+|------|----------|----------|--------|--------|
+| icon_music_player | icon-heavy | ✅ 2 steps | ✅ 2 steps | Tie |
+| color_picker | icon-heavy | ❌ timeout | ✅ 2 steps | **Vision** |
+| wikipedia_toc_nav | mixed | ✅ 2 steps | ✅ 3 steps | Baseline |
+| hackernews_top_story | mixed | ✅ 2 steps | ✅ 1 step | Vision |
+| github_trending | dom-rich | ✅ 2 steps | ✅ 1 step | Vision |
+| arxiv_search | dom-rich | ❌ timeout | ✅ 4 steps | **Vision** |
+
+**Success Rate: Baseline 4/6 (67%) → Vision 6/6 (100%)**
+
+Key observations:
+- Vision-enhanced agent solves **all** tasks; baseline fails on visually complex ones
+- On DOM-rich sites (GitHub, HN), adaptive strategy skips vision → zero GPU overhead
+- Vision agent wins 4/6, baseline wins 1/6, ties 1/6
+
+### Latency
+
 | Metric | Value |
 |--------|-------|
 | Florence-2 OCR latency | ~1.0s / call (A100) |
 | Florence-2 region detection | ~0.5s / call (A100) |
 | SoM annotation overhead | < 50ms |
 | End-to-end step time (with vision) | ~10s (including LLM) |
-| Adaptive skip rate | 50% of steps |
+| Adaptive skip rate | ~50% of steps |
 | Unit tests | 72 passing |
 | E2E scenarios | 3/3 passing |
 
@@ -333,6 +353,7 @@ class VisionEnhancedAgent(Agent):
 - [x] CI pipeline (GitHub Actions) — 72 unit tests
 - [~] OmniParser V2 backend (code complete, needs integration testing)
 - [ ] GroundingDINO as alternative detection backend
+- [x] Real-world benchmark (6 tasks, 100% success rate)
 - [ ] Benchmark against WebArena / Mind2Web evaluation suites
 - [ ] Video stream mode for real-time agent observation
 - [ ] Confidence evaluator v2: learn threshold from agent traces
