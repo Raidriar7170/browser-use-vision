@@ -4,6 +4,11 @@
 继承 browser-use 原生 Agent，在 DOM 处理阶段注入视觉 Grounding 增强。
 设计为无侵入式——不修改原仓库任何代码，通过继承和组合实现增强。
 
+核心能力:
+1. SoM（Set of Marks）标注 — 在截图上画框+编号，帮助 LLM 精准定位元素
+2. 视觉 Grounding（Florence-2 OCR） — 识别 DOM 无法区分的视觉内容
+3. 自适应策略 — 仅在需要时启用视觉增强，降低开销
+
 兼容 browser-use 0.12.7 API。
 """
 
@@ -17,6 +22,7 @@ from browser_use.agent.views import AgentStepInfo
 
 from browser_use_vision.adaptive import AdaptiveVisionStrategy, VisionDecision
 from browser_use_vision.grounding import DetectedElement, VisualGroundingBackend
+from browser_use_vision.som import annotate_screenshot_from_state
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +54,10 @@ class VisionEnhancedAgent(Agent):
         vision_backend: Optional[VisualGroundingBackend] = None,
         adaptive_strategy: Optional[AdaptiveVisionStrategy] = None,
         enable_adaptive: bool = True,
+        enable_som: bool = True,
+        som_max_elements: int = 50,
+        som_line_width: int = 2,
+        som_font_size: int = 14,
         vision_high_threshold: float = 0.8,
         vision_low_threshold: float = 0.5,
         force_vision_after_failures: int = 2,
@@ -58,6 +68,10 @@ class VisionEnhancedAgent(Agent):
                 vision_backend: 视觉 Grounding 后端实例
                 adaptive_strategy: 自定义自适应策略（不传则创建默认策略）
                 enable_adaptive: 是否启用自适应策略（False=每步都用视觉）
+                enable_som: 是否启用 SoM 截图标注（在截图上画框+编号）
+                som_max_elements: SoM 最多标注的元素数量
+                som_line_width: SoM 边框线宽
+                som_font_size: SoM 标签字体大小
                 vision_high_threshold: DOM 置信度高阈值（高于此值跳过视觉）
                 vision_low_threshold: DOM 置信度低阈值（低于此值完整视觉）
                 force_vision_after_failures: 连续失败多少次后强制视觉
@@ -66,6 +80,10 @@ class VisionEnhancedAgent(Agent):
 
         self.vision_backend = vision_backend
         self.enable_adaptive = enable_adaptive
+        self.enable_som = enable_som
+        self.som_max_elements = som_max_elements
+        self.som_line_width = som_line_width
+        self.som_font_size = som_font_size
 
         if adaptive_strategy:
             self.adaptive_strategy = adaptive_strategy
@@ -84,12 +102,28 @@ class VisionEnhancedAgent(Agent):
 
         流程:
         1. 调用父类获取 BrowserStateSummary
-        2. 评估 DOM 置信度 → 决定是否需要视觉
-        3. 如果需要 → 视觉检测 → 将描述注入消息上下文
-        4. 返回增强后的上下文
+        2. 应用 SoM 标注（在截图上画框+编号）
+        3. 评估 DOM 置信度 → 决定是否需要视觉 Grounding
+        4. 如果需要 → 视觉检测 → 将描述注入消息上下文
+        5. 返回增强后的上下文
         """
         # 1. 原有流程（返回 BrowserStateSummary）
         browser_state_summary = await super()._prepare_context(step_info)
+
+        # 2. SoM 标注 — 在截图上为每个可交互元素画框+编号
+        if self.enable_som:
+            try:
+                annotated = annotate_screenshot_from_state(
+                    browser_state_summary,
+                    line_width=self.som_line_width,
+                    font_size=self.som_font_size,
+                    max_elements=self.som_max_elements,
+                )
+                if annotated:
+                    browser_state_summary.screenshot = annotated
+                    logger.debug("SoM annotation applied to screenshot")
+            except Exception as e:
+                logger.warning(f"SoM annotation failed (continuing without): {e}")
 
         if not self.vision_backend:
             return browser_state_summary

@@ -4,6 +4,7 @@ Browser-Use Vision Enhancement Module
 """
 
 from browser_use_vision.grounding.base import DetectedElement, VisualGroundingBackend
+from browser_use_vision.som import annotate_screenshot, annotate_screenshot_from_state
 
 
 def __getattr__(name: str):
@@ -19,6 +20,8 @@ __all__ = [
     "VisionEnhancedAgent",
     "DetectedElement",
     "VisualGroundingBackend",
+    "annotate_screenshot",
+    "annotate_screenshot_from_state",
 ]
 
 __version__ = "0.1.0"
