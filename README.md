@@ -1,5 +1,10 @@
 # 🔍 Browser-Use Vision Enhancement
 
+[![Tests](https://github.com/Raidriar7170/browser-use-vision/actions/workflows/tests.yml/badge.svg)](https://github.com/Raidriar7170/browser-use-vision/actions/workflows/tests.yml)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
+
 **A vision-grounding plugin for [browser-use](https://github.com/browser-use/browser-use) (⭐ 94k) that enables browser agents to understand what they _see_, not just what they read from the DOM.**
 
 为 [browser-use](https://github.com/browser-use/browser-use)（⭐ 94k）浏览器 Agent 框架提供视觉 Grounding 增强——让 Agent 不仅能读 DOM，还能"看见"页面。
