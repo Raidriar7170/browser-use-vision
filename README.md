@@ -109,7 +109,7 @@ browser-use-vision/
 │   ├── server.py                   # FastAPI vision inference server
 │   └── config.py                   # Configuration management
 │
-├── tests/                          # Test suite (42 tests, 496 lines)
+├── tests/                          # Test suite (72 tests)
 │   ├── test_som.py                 # SoM annotation tests (24 tests)
 │   ├── test_grounding.py           # Grounding module tests
 │   └── test_adaptive.py            # Adaptive strategy tests
@@ -301,7 +301,7 @@ class VisionEnhancedAgent(Agent):
 | SoM annotation overhead | < 50ms |
 | End-to-end step time (with vision) | ~10s (including LLM) |
 | Adaptive skip rate | 50% of steps |
-| Unit tests | 42 passing |
+| Unit tests | 72 passing |
 | E2E scenarios | 3/3 passing |
 
 ---
