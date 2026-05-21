@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Icon-Only Music Player</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+        }
+
+        .player {
+            width: 420px;
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+
+        .album-art {
+            width: 100%;
+            height: 280px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 80px;
+            margin-bottom: 24px;
+        }
+
+        .track-info {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .track-info .title { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+        .track-info .artist { font-size: 14px; color: rgba(255,255,255,0.6); }
+
+        .progress {
+            width: 100%;
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+            margin: 16px 0;
+            cursor: pointer;
+        }
+        .progress-fill {
+            width: 35%;
+            height: 100%;
+            background: #667eea;
+            border-radius: 2px;
+        }
+        .time-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 20px;
+        }
+
+        /* === KEY PART: Icon-only controls with NO text labels === */
+        .controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .ctrl-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 12px;
+            border-radius: 50%;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .ctrl-btn:hover { background: rgba(255,255,255,0.1); }
+
+        /* Small buttons */
+        .ctrl-btn.sm svg { width: 20px; height: 20px; }
+        /* Medium buttons */
+        .ctrl-btn.md svg { width: 28px; height: 28px; }
+        /* Play button - large */
+        .ctrl-btn.play-btn {
+            background: #667eea;
+            width: 56px;
+            height: 56px;
+        }
+        .ctrl-btn.play-btn:hover { background: #5a6fe0; transform: scale(1.05); }
+        .ctrl-btn.play-btn svg { width: 24px; height: 24px; }
+
+        /* Bottom action bar - also icon only */
+        .action-bar {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .action-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .action-btn:hover { background: rgba(255,255,255,0.1); }
+        .action-btn svg { width: 22px; height: 22px; }
+
+        /* Volume slider */
+        .volume-section {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 16px;
+            justify-content: center;
+        }
+        .volume-slider {
+            width: 120px;
+            height: 4px;
+            -webkit-appearance: none;
+            background: rgba(255,255,255,0.2);
+            border-radius: 2px;
+            outline: none;
+        }
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+
+        /* Result display */
+        #result {
+            margin-top: 16px;
+            padding: 12px;
+            background: rgba(0,255,0,0.1);
+            border: 1px solid rgba(0,255,0,0.3);
+            border-radius: 8px;
+            text-align: center;
+            font-size: 14px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="player">
+        <div class="album-art">🎵</div>
+
+        <div class="track-info">
+            <div class="title">Midnight Dreams</div>
+            <div class="artist">Aurora Beats</div>
+        </div>
+
+        <div class="progress"><div class="progress-fill"></div></div>
+        <div class="time-labels"><span>1:23</span><span>3:45</span></div>
+
+        <!-- ICON-ONLY CONTROLS: No text, no aria-label, no title -->
+        <!-- An agent without vision cannot distinguish these buttons -->
+        <div class="controls">
+            <!-- Shuffle -->
+            <button class="ctrl-btn sm" data-action="shuffle" onclick="doAction('shuffle')">
+                <svg fill="rgba(255,255,255,0.6)" viewBox="0 0 24 24"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.18 1.42-1.42zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>
+            </button>
+            <!-- Previous -->
+            <button class="ctrl-btn md" data-action="previous" onclick="doAction('previous')">
+                <svg fill="white" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+            </button>
+            <!-- Play/Pause -->
+            <button class="ctrl-btn play-btn" data-action="play" onclick="doAction('play')">
+                <svg fill="white" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            </button>
+            <!-- Next -->
+            <button class="ctrl-btn md" data-action="next" onclick="doAction('next')">
+                <svg fill="white" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+            </button>
+            <!-- Repeat -->
+            <button class="ctrl-btn sm" data-action="repeat" onclick="doAction('repeat')">
+                <svg fill="rgba(255,255,255,0.6)" viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
+            </button>
+        </div>
+
+        <!-- Bottom action bar: also icon-only -->
+        <div class="action-bar">
+            <!-- Heart/Like -->
+            <button class="action-btn" data-action="like" onclick="doAction('like')">
+                <svg fill="rgba(255,255,255,0.6)" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            </button>
+            <!-- Add to playlist -->
+            <button class="action-btn" data-action="add_to_playlist" onclick="doAction('add_to_playlist')">
+                <svg fill="rgba(255,255,255,0.6)" viewBox="0 0 24 24"><path d="M14 10H2v2h12v-2zm0-4H2v2h12V6zm4 8v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zM2 16h8v-2H2v2z"/></svg>
+            </button>
+            <!-- Share -->
+            <button class="action-btn" data-action="share" onclick="doAction('share')">
+                <svg fill="rgba(255,255,255,0.6)" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
+            </button>
+            <!-- Download -->
+            <button class="action-btn" data-action="download" onclick="doAction('download')">
+                <svg fill="rgba(255,255,255,0.6)" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+            </button>
+        </div>
+
+        <!-- Volume -->
+        <div class="volume-section">
+            <button class="action-btn" data-action="mute" onclick="doAction('mute')">
+                <svg fill="rgba(255,255,255,0.6)" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+            </button>
+            <input type="range" class="volume-slider" min="0" max="100" value="75" />
+        </div>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const actions = [];
+        function doAction(name) {
+            actions.push(name);
+            const el = document.getElementById('result');
+            el.style.display = 'block';
+            el.textContent = '✅ Action: ' + name + ' (total: ' + actions.length + ')';
+            console.log('ACTION:' + name);
+        }
+    </script>
+</body>
+</html>
