@@ -103,7 +103,7 @@ browser-use-vision/
 │   ├── grounding/                  # Vision backends
 │   │   ├── base.py                 # Abstract VisualGroundingBackend
 │   │   ├── florence.py             # Florence-2 backend (OCR + regions)
-│   │   └── omniparser.py          # OmniParser V2 backend (UI detection)
+│   │   └── omniparser.py          # OmniParser V2 backend [experimental]
 │   ├── adaptive/                   # Adaptive vision strategy
 │   │   └── __init__.py             # DOM confidence evaluator + strategy
 │   ├── server.py                   # FastAPI vision inference server
@@ -206,8 +206,11 @@ asyncio.run(main())
 ### 3. Run Tests
 
 ```bash
-# Unit tests (42 tests)
+# Unit tests (72 tests)
 pytest tests/ -v
+
+# With coverage report
+pytest tests/ --cov=browser_use_vision --cov-report=term-missing
 
 # E2E integration tests (requires Vision API + HTTP server)
 python scripts/e2e_test.py
@@ -215,6 +218,17 @@ python scripts/e2e_test.py
 # Single scenario
 python scripts/e2e_test.py --scenario icon_only
 ```
+
+**Test Coverage** (core logic modules):
+
+| Module | Coverage | Notes |
+|--------|----------|-------|
+| `adaptive/` | 95% | DOM confidence scoring + strategy |
+| `som.py` | 90% | Set-of-Mark screenshot annotation |
+| `enhanced_agent.py` | 67% | Core agent (format/enrich/stats) |
+| `grounding/__init__.py` | 63% | Abstract base + DetectedElement |
+| `florence.py` | — | Requires live API (tested via E2E) |
+| `server.py` | — | Runtime only (tested via E2E) |
 
 ---
 
@@ -316,7 +330,8 @@ class VisionEnhancedAgent(Agent):
 - [x] SoM (Set-of-Mark) screenshot annotation
 - [x] Adaptive vision strategy (DOM confidence scoring)
 - [x] E2E integration tests with HTML fixtures
-- [x] CI pipeline (GitHub Actions)
+- [x] CI pipeline (GitHub Actions) — 72 unit tests
+- [~] OmniParser V2 backend (code complete, needs integration testing)
 - [ ] GroundingDINO as alternative detection backend
 - [ ] Benchmark against WebArena / Mind2Web evaluation suites
 - [ ] Video stream mode for real-time agent observation
@@ -340,7 +355,7 @@ MIT License. See [LICENSE](LICENSE) for details.
 > - **ML Engineering** — Deployed Florence-2 vision foundation model as a GPU inference service; designed SoM (Set-of-Mark) annotation pipeline for visual grounding
 > - **Performance Optimization** — Adaptive inference strategy reduces vision model calls by 50% through rule-based DOM confidence scoring
 > - **Quantitative Results** — Vision-enhanced agent solves icon-only tasks in 2 steps (vs. 29+ step timeout for baseline); 3/3 E2E scenarios pass with 100% first-attempt success
-> - **Software Engineering** — 1,800-line core module, 42 unit tests, 3 E2E integration tests, CI pipeline, typed Python codebase
+> - **Software Engineering** — 1,800-line core module, 72 unit tests, 3 E2E integration tests, CI pipeline, typed Python codebase
 >
 > ---
 >
@@ -352,4 +367,4 @@ MIT License. See [LICENSE](LICENSE) for details.
 > - **ML 工程** — 部署 Florence-2 视觉基础模型为 GPU 推理服务；设计 SoM 标注管线实现视觉定位
 > - **性能优化** — 自适应推理策略通过 DOM 置信度评估将视觉模型调用减少 50%
 > - **量化结果** — 视觉增强 Agent 在纯图标任务中 2 步完成（基线 29+ 步超时）；3/3 端到端场景通过，100% 首次成功率
-> - **工程规范** — 1800 行核心模块、42 单元测试、3 个 E2E 集成测试、CI 流水线、类型化 Python 代码
+> - **工程规范** — 1800 行核心模块、72 单元测试、3 个 E2E 集成测试、CI 流水线、类型化 Python 代码

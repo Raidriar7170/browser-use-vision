@@ -1,8 +1,11 @@
 """
-OmniParser V2 视觉 Grounding 后端
+OmniParser V2 视觉 Grounding 后端 [EXPERIMENTAL]
 
 使用微软 OmniParser V2 专门做 UI 元素检测。
 OmniParser 专为 UI 理解设计，检测精度高于通用视觉模型。
+
+⚠️ 实验性功能：代码已实现但尚未经过集成测试。
+   当前推荐使用 Florence-2 后端（已充分验证）。
 
 部署方式：在 A100 服务器上启动 OmniParser API 服务，本地通过 HTTP 调用。
 """
