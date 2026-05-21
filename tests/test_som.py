@@ -15,17 +15,15 @@ from dataclasses import dataclass
 from typing import Optional
 from unittest.mock import MagicMock
 
-import pytest
 from PIL import Image
 
 from browser_use_vision.som import (
+    _get_viewport_bbox,
+    _is_light_color,
     annotate_screenshot,
     annotate_screenshot_from_state,
     hex_to_rgb,
-    _is_light_color,
-    _get_viewport_bbox,
 )
-
 
 # ---- 测试用数据结构（模拟 browser-use 的类型） ----
 
@@ -66,11 +64,7 @@ def make_selector_map(elements: list[tuple[int, float, float, float, float]]) ->
     """
     selector_map = {}
     for bid, x, y, w, h in elements:
-        node = MockDOMTreeNode(
-            snapshot_node=MockSnapshotNode(
-                bounds=MockDOMRect(x=x, y=y, width=w, height=h)
-            )
-        )
+        node = MockDOMTreeNode(snapshot_node=MockSnapshotNode(bounds=MockDOMRect(x=x, y=y, width=w, height=h)))
         selector_map[bid] = node
     return selector_map
 
@@ -157,11 +151,13 @@ class TestAnnotateScreenshot:
     def test_basic_annotation(self):
         """基本标注：几个元素，验证输出是有效的 base64 PNG"""
         screenshot = make_screenshot()
-        selector_map = make_selector_map([
-            (1, 50, 50, 200, 40),
-            (2, 50, 120, 200, 40),
-            (3, 300, 50, 150, 40),
-        ])
+        selector_map = make_selector_map(
+            [
+                (1, 50, 50, 200, 40),
+                (2, 50, 120, 200, 40),
+                (3, 300, 50, 150, 40),
+            ]
+        )
         result = annotate_screenshot(screenshot, selector_map)
 
         # 验证是有效的 base64
@@ -176,10 +172,12 @@ class TestAnnotateScreenshot:
     def test_filters_small_elements(self):
         """太小的元素（< 5px）应被过滤"""
         screenshot = make_screenshot()
-        selector_map = make_selector_map([
-            (1, 50, 50, 3, 3),   # 太小，应被过滤
-            (2, 50, 120, 200, 40),  # 正常
-        ])
+        selector_map = make_selector_map(
+            [
+                (1, 50, 50, 3, 3),  # 太小，应被过滤
+                (2, 50, 120, 200, 40),  # 正常
+            ]
+        )
         result = annotate_screenshot(screenshot, selector_map)
 
         # 不应崩溃，输出有效
@@ -190,11 +188,13 @@ class TestAnnotateScreenshot:
     def test_filters_out_of_viewport(self):
         """视口外的元素应被过滤"""
         screenshot = make_screenshot(800, 600)
-        selector_map = make_selector_map([
-            (1, -300, -300, 100, 100),  # 完全在视口外
-            (2, 900, 700, 100, 100),    # 完全在视口外
-            (3, 50, 50, 200, 40),       # 视口内
-        ])
+        selector_map = make_selector_map(
+            [
+                (1, -300, -300, 100, 100),  # 完全在视口外
+                (2, 900, 700, 100, 100),  # 完全在视口外
+                (3, 50, 50, 200, 40),  # 视口内
+            ]
+        )
         result = annotate_screenshot(screenshot, selector_map)
 
         # 应成功，只有 1 个元素在视口内
@@ -223,9 +223,11 @@ class TestAnnotateScreenshot:
     def test_annotated_differs_from_original(self):
         """标注后的图片应该和原图不同"""
         screenshot = make_screenshot()
-        selector_map = make_selector_map([
-            (1, 50, 50, 200, 40),
-        ])
+        selector_map = make_selector_map(
+            [
+                (1, 50, 50, 200, 40),
+            ]
+        )
         result = annotate_screenshot(screenshot, selector_map)
         # base64 结果应该不同（因为画了东西）
         assert result != screenshot
@@ -234,20 +236,24 @@ class TestAnnotateScreenshot:
         """元素应按 y 坐标排序"""
         screenshot = make_screenshot()
         # 故意乱序
-        selector_map = make_selector_map([
-            (10, 50, 300, 200, 40),  # y=300
-            (20, 50, 50, 200, 40),   # y=50
-            (30, 50, 180, 200, 40),  # y=180
-        ])
+        selector_map = make_selector_map(
+            [
+                (10, 50, 300, 200, 40),  # y=300
+                (20, 50, 50, 200, 40),  # y=50
+                (30, 50, 180, 200, 40),  # y=180
+            ]
+        )
         result = annotate_screenshot(screenshot, selector_map)
         assert isinstance(result, str)
 
     def test_with_scroll_offset(self):
         """滚动偏移应正确应用"""
         screenshot = make_screenshot()
-        selector_map = make_selector_map([
-            (1, 50, 550, 200, 40),  # 文档坐标 y=550
-        ])
+        selector_map = make_selector_map(
+            [
+                (1, 50, 550, 200, 40),  # 文档坐标 y=550
+            ]
+        )
         # viewport_offset_y=500，元素在视口内 y=50
         result = annotate_screenshot(screenshot, selector_map, viewport_offset_y=500)
         assert isinstance(result, str)
@@ -260,9 +266,11 @@ class TestAnnotateScreenshotFromState:
     def test_basic(self):
         """从模拟的 BrowserStateSummary 标注"""
         screenshot = make_screenshot()
-        selector_map = make_selector_map([
-            (1, 50, 50, 200, 40),
-        ])
+        selector_map = make_selector_map(
+            [
+                (1, 50, 50, 200, 40),
+            ]
+        )
 
         state = MagicMock()
         state.screenshot = screenshot

@@ -16,15 +16,16 @@
 
 import asyncio
 import json
+import logging
 import os
 import sys
 import time
-import logging
 import traceback
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
+
 
 # ---------- 环境配置 ----------
 def _load_hermes_env():
@@ -41,11 +42,11 @@ def _load_hermes_env():
         if key and val:
             os.environ.setdefault(key, val)
 
+
 _load_hermes_env()
 
 # 清除代理设置，避免干扰 browser-use CDP 连接
-for proxy_var in ["HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY",
-                  "http_proxy", "https_proxy", "all_proxy"]:
+for proxy_var in ["HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "http_proxy", "https_proxy", "all_proxy"]:
     os.environ.pop(proxy_var, None)
 os.environ["NO_PROXY"] = "localhost,127.0.0.1"
 os.environ["no_proxy"] = "localhost,127.0.0.1"
@@ -63,6 +64,7 @@ logger = logging.getLogger("e2e_test")
 
 def get_llm():
     from browser_use.llm.openai.chat import ChatOpenAI
+
     kwargs = dict(model=OPENAI_MODEL, api_key=OPENAI_API_KEY, temperature=0.0)
     if OPENAI_BASE_URL:
         kwargs["base_url"] = OPENAI_BASE_URL
@@ -404,17 +406,19 @@ SCENARIOS = [
 # Agent 运行器
 # ============================================================
 
+
 async def run_scenario(scenario: dict) -> dict:
     """在真实浏览器中运行一个场景"""
     from browser_use.browser.session import BrowserSession
+
     from browser_use_vision.enhanced_agent import VisionEnhancedAgent
     from browser_use_vision.grounding.florence import FlorenceBackend
 
     name = scenario["name"]
-    logger.info(f"\n{'='*60}")
+    logger.info(f"\n{'=' * 60}")
     logger.info(f"Running: {scenario['title']}")
     logger.info(f"Task: {scenario['task']}")
-    logger.info(f"{'='*60}")
+    logger.info(f"{'=' * 60}")
 
     session = BrowserSession(headless=True)
     result = {"name": name, "title": scenario["title"], "description": scenario["description"]}
@@ -477,17 +481,19 @@ async def run_scenario(scenario: dict) -> dict:
             pass
 
         success = all_found or agent_success
-        result.update({
-            "success": success,
-            "actions_validated": all_found,
-            "agent_reported_success": agent_success,
-            "agent_text": agent_text,
-            "expected_actions": expected,
-            "actual_actions": actions,
-            "steps": steps,
-            "elapsed": elapsed,
-            "vision_stats": agent.vision_stats,
-        })
+        result.update(
+            {
+                "success": success,
+                "actions_validated": all_found,
+                "agent_reported_success": agent_success,
+                "agent_text": agent_text,
+                "expected_actions": expected,
+                "actual_actions": actions,
+                "steps": steps,
+                "elapsed": elapsed,
+                "vision_stats": agent.vision_stats,
+            }
+        )
 
         status = "✅" if success else "❌"
         logger.info(f"\n{status} {name}: success={success}, steps={steps}, elapsed={elapsed}s")
@@ -523,9 +529,9 @@ async def run_all():
     # 汇总
     passed = sum(1 for r in results if r.get("success"))
     total = len(results)
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"📊 端到端测试结果: {passed}/{total} 通过")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     for r in results:
         s = "✅" if r.get("success") else "❌"
         steps = r.get("steps", "?")
@@ -547,6 +553,7 @@ async def run_all():
 
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--scenario", help="只运行指定场景", default=None)
     args = parser.parse_args()

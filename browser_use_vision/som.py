@@ -205,9 +205,7 @@ def annotate_screenshot_from_state(
     )
 
 
-def _get_viewport_bbox(
-    node, viewport_offset_y: float
-) -> tuple[float, float, float, float] | None:
+def _get_viewport_bbox(node, viewport_offset_y: float) -> tuple[float, float, float, float] | None:
     """
     获取元素在视口中的 bounding box (x, y, width, height)
 

@@ -12,8 +12,6 @@ Browser-Use Vision Enhancement — 视觉增强优势场景对比
 - Agent 上下文信息量对比
 """
 
-import asyncio
-import base64
 import json
 import sys
 from pathlib import Path
@@ -99,6 +97,7 @@ MIXED_DOM = """
 </main>
 """
 
+
 def main():
     scenarios = [
         ("example.com (简单页面)", GOOD_DOM),
@@ -132,14 +131,14 @@ def main():
 
         # 判断什么信息 LLM 拿不到
         if decision == VisionDecision.SKIP:
-            print(f"\n  ✅ DOM 信息充足，不需要视觉增强")
-            print(f"     → 直接用 DOM 文本就能完成任务")
+            print("\n  ✅ DOM 信息充足，不需要视觉增强")
+            print("     → 直接用 DOM 文本就能完成任务")
         elif decision == VisionDecision.LIGHTWEIGHT:
-            print(f"\n  ⚡ 建议轻量视觉 (OCR)")
-            print(f"     → 部分元素缺乏语义，视觉能补充")
+            print("\n  ⚡ 建议轻量视觉 (OCR)")
+            print("     → 部分元素缺乏语义，视觉能补充")
         elif decision == VisionDecision.FULL:
-            print(f"\n  🔍 需要完整视觉检测")
-            print(f"     → DOM 信息严重不足，Agent 仅靠 DOM 可能无法正确操作")
+            print("\n  🔍 需要完整视觉检测")
+            print("     → DOM 信息严重不足，Agent 仅靠 DOM 可能无法正确操作")
             if signals.unlabeled_buttons > 0:
                 print(f"     → {signals.unlabeled_buttons} 个按钮没有文字标签")
             if signals.images_without_alt > 0:
@@ -153,12 +152,12 @@ def main():
 
     # 生成对比表
     print(f"\n{'─' * 72}")
-    print(f"  结论：自适应策略如何节省开销")
+    print("  结论：自适应策略如何节省开销")
     print(f"{'─' * 72}")
-    print(f"  • 简单页面 (example.com)     → SKIP   → 省掉 ~2s 视觉调用")
-    print(f"  • 图标按钮页面 (SPA)         → FULL   → 视觉增强关键！")
-    print(f"  • 自定义组件 (Angular/React) → FULL   → DOM 结构不反映功能")
-    print(f"  • 混合页面                   → 看情况 → 选择性增强")
+    print("  • 简单页面 (example.com)     → SKIP   → 省掉 ~2s 视觉调用")
+    print("  • 图标按钮页面 (SPA)         → FULL   → 视觉增强关键！")
+    print("  • 自定义组件 (Angular/React) → FULL   → DOM 结构不反映功能")
+    print("  • 混合页面                   → 看情况 → 选择性增强")
     print()
 
 

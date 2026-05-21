@@ -10,8 +10,8 @@ Usage:
     python scripts/som_visual_test.py [--url URL] [--output DIR]
 """
 
-import asyncio
 import argparse
+import asyncio
 import base64
 import io
 import os
@@ -79,10 +79,7 @@ async def get_interactive_elements(page) -> dict[int, SimpleNode]:
     for el in elements_data:
         node = SimpleNode(
             snapshot_node=SimpleSnapshotNode(
-                clientRects=SimpleDOMRect(
-                    x=el["x"], y=el["y"],
-                    width=el["width"], height=el["height"]
-                )
+                clientRects=SimpleDOMRect(x=el["x"], y=el["y"], width=el["width"], height=el["height"])
             )
         )
         selector_map[el["id"]] = node
@@ -92,11 +89,12 @@ async def get_interactive_elements(page) -> dict[int, SimpleNode]:
 
 async def main(url: str, output_dir: str):
     from playwright.async_api import async_playwright
+
     from browser_use_vision.som import annotate_screenshot
 
     os.makedirs(output_dir, exist_ok=True)
 
-    print(f"[1/5] 启动浏览器...")
+    print("[1/5] 启动浏览器...")
     async with async_playwright() as p:
         browser = await p.chromium.launch(
             headless=True,
@@ -112,7 +110,7 @@ async def main(url: str, output_dir: str):
         await page.goto(url, wait_until="networkidle", timeout=30000)
         await asyncio.sleep(1)
 
-        print(f"[3/5] 截图 + 获取 DOM...")
+        print("[3/5] 截图 + 获取 DOM...")
         screenshot_bytes = await page.screenshot(type="png", full_page=False)
         screenshot_b64 = base64.b64encode(screenshot_bytes).decode()
 
@@ -125,7 +123,7 @@ async def main(url: str, output_dir: str):
             f.write(screenshot_bytes)
         print(f"     原始截图: {original_path}")
 
-        print(f"[4/5] 应用 SoM 标注...")
+        print("[4/5] 应用 SoM 标注...")
         annotated_b64 = annotate_screenshot(
             screenshot_b64=screenshot_b64,
             selector_map=selector_map,
@@ -142,7 +140,7 @@ async def main(url: str, output_dir: str):
         print(f"     标注截图: {annotated_path}")
 
         # 创建对比图
-        print(f"[5/5] 生成对比图...")
+        print("[5/5] 生成对比图...")
         orig_img = Image.open(io.BytesIO(screenshot_bytes))
         anno_img = Image.open(io.BytesIO(annotated_bytes))
 
@@ -162,7 +160,7 @@ async def main(url: str, output_dir: str):
         print(f"     对比图: {comparison_path}")
 
         # 打印元素统计
-        print(f"\n📊 SoM 标注统计:")
+        print("\n📊 SoM 标注统计:")
         print(f"   页面: {url}")
         print(f"   可交互元素: {len(selector_map)}")
 

@@ -17,8 +17,8 @@ Usage:
 
 from __future__ import annotations
 
-import asyncio
 import argparse
+import asyncio
 import json
 import os
 import sys
@@ -28,6 +28,7 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
+
 
 # ---------- 代理和环境配置 ----------
 # 从 ~/.hermes/.env 加载 key（跳过 shell 语法错误的行）
@@ -44,6 +45,7 @@ def _load_hermes_env():
         val = val.strip().strip("'\"")
         if key and val and not os.getenv(key):
             os.environ[key] = val
+
 
 _load_hermes_env()
 
@@ -158,7 +160,7 @@ async def run_baseline() -> dict:
         success, actions = await check_result(session)
         steps = count_steps(history)
 
-        print(f"\n📊 Baseline 结果:")
+        print("\n📊 Baseline 结果:")
         print(f"   成功: {'✅' if success else '❌'}")
         print(f"   步数: {steps}")
         print(f"   耗时: {elapsed}s")
@@ -180,6 +182,7 @@ async def run_baseline() -> dict:
 async def run_vision() -> dict:
     """Vision-Enhanced Agent (SoM + OCR)"""
     from browser_use.browser.session import BrowserSession
+
     from browser_use_vision.enhanced_agent import VisionEnhancedAgent
     from browser_use_vision.grounding.florence import FlorenceBackend
 
@@ -197,8 +200,8 @@ async def run_vision() -> dict:
             llm=llm,
             browser_session=session,
             vision_backend=vision_backend,
-            use_vision=True,    # 让 browser-use 发截图给 LLM
-            enable_som=True,    # SoM 标注
+            use_vision=True,  # 让 browser-use 发截图给 LLM
+            enable_som=True,  # SoM 标注
             enable_adaptive=False,  # 总是用视觉
             max_steps=MAX_STEPS,
         )
@@ -220,7 +223,7 @@ async def run_vision() -> dict:
             success = True
         steps = count_steps(history)
 
-        print(f"\n📊 Vision 结果:")
+        print("\n📊 Vision 结果:")
         print(f"   成功: {'✅' if success else '❌'}")
         print(f"   步数: {steps}")
         print(f"   耗时: {elapsed}s")
@@ -229,8 +232,11 @@ async def run_vision() -> dict:
         print(f"   视觉统计: {agent.vision_stats}")
 
         return {
-            "mode": "vision", "success": success, "steps": steps,
-            "elapsed": elapsed, "actions": actions,
+            "mode": "vision",
+            "success": success,
+            "steps": steps,
+            "elapsed": elapsed,
+            "actions": actions,
             "agent_report": history_text,
             "vision_stats": agent.vision_stats,
         }
@@ -262,12 +268,12 @@ async def main(mode: str):
         print("=" * 60)
         print(f"   {'指标':<20} {'Baseline':<15} {'Vision':<15}")
         print(f"   {'-' * 50}")
-        bl_ok = '✅' if bl.get('success') else '❌'
-        vi_ok = '✅' if vi.get('success') else '❌'
+        bl_ok = "✅" if bl.get("success") else "❌"
+        vi_ok = "✅" if vi.get("success") else "❌"
         print(f"   {'成功?':<20} {bl_ok:<15} {vi_ok:<15}")
-        if bl.get('elapsed'):
+        if bl.get("elapsed"):
             print(f"   {'耗时':<20} {bl['elapsed']}s{'':<9} {vi.get('elapsed', '?')}s")
-        if bl.get('steps'):
+        if bl.get("steps"):
             print(f"   {'步数':<20} {bl['steps']:<15} {vi.get('steps', '?'):<15}")
 
     # 保存

@@ -4,17 +4,19 @@
 在 A100 上加载 Florence-2-large，对一张合成测试图片做目标检测和描述。
 验证整条链路: 模型加载 → 图片预处理 → 推理 → 结果解析
 """
+
 import asyncio
 import io
 import sys
 import time
 
 # 生成一张简单的测试图片（模拟网页截图）
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
+
 
 def create_test_screenshot() -> bytes:
     """创建一张模拟网页截图"""
-    img = Image.new('RGB', (1280, 720), color=(255, 255, 255))
+    img = Image.new("RGB", (1280, 720), color=(255, 255, 255))
     draw = ImageDraw.Draw(img)
 
     # 模拟导航栏
@@ -43,12 +45,12 @@ def create_test_screenshot() -> bytes:
     draw.text((70, 350), "Some description text", fill=(100, 100, 100))
 
     buf = io.BytesIO()
-    img.save(buf, format='PNG')
+    img.save(buf, format="PNG")
     return buf.getvalue()
 
 
 async def main():
-    sys.path.insert(0, '/mnt/data/minghongsun/browser-use-vision')
+    sys.path.insert(0, "/mnt/data/minghongsun/browser-use-vision")
 
     from browser_use_vision.grounding.florence import FlorenceBackend
 
@@ -65,8 +67,8 @@ async def main():
     print("\n[2] Loading Florence-2 model...")
     t0 = time.time()
     backend = FlorenceBackend(
-        model_name='/mnt/data/minghongsun/models/florence-2-large',
-        device='cuda',
+        model_name="/mnt/data/minghongsun/models/florence-2-large",
+        device="cuda",
     )
     await backend.load_model()
     load_time = time.time() - t0
@@ -81,34 +83,34 @@ async def main():
     print(f"    Detected {len(elements)} elements in {detect_time:.1f}s")
 
     for i, el in enumerate(elements):
-        print(f"    [{i}] {el.label} at {el.bbox} - \"{el.description[:60]}\" (conf={el.confidence:.2f})")
+        print(f'    [{i}] {el.label} at {el.bbox} - "{el.description[:60]}" (conf={el.confidence:.2f})')
 
     # 4. 区域描述
     print("\n[4] Describing specific region (button area)...")
     t0 = time.time()
     desc = await backend.describe_region(screenshot, (0.625, 0.139, 0.742, 0.194))
     desc_time = time.time() - t0
-    print(f"    Description: \"{desc}\"")
+    print(f'    Description: "{desc}"')
     print(f"    Time: {desc_time:.1f}s")
 
     # 5. 测试 DOM 匹配
     print("\n[5] Testing DOM-to-visual matching...")
     dom_elements = [
-        {'id': 'btn1', 'tag': 'button', 'text': 'Click Me', 'bbox': (0.625, 0.139, 0.742, 0.194)},
-        {'id': 'icon1', 'tag': 'div', 'text': '', 'bbox': (0.859, 0.014, 0.891, 0.069)},
-        {'id': 'search', 'tag': 'input', 'text': 'Search...', 'bbox': (0.312, 0.021, 0.547, 0.063)},
+        {"id": "btn1", "tag": "button", "text": "Click Me", "bbox": (0.625, 0.139, 0.742, 0.194)},
+        {"id": "icon1", "tag": "div", "text": "", "bbox": (0.859, 0.014, 0.891, 0.069)},
+        {"id": "search", "tag": "input", "text": "Search...", "bbox": (0.312, 0.021, 0.547, 0.063)},
     ]
     enriched = await backend.match_dom_to_visual(dom_elements, elements, iou_threshold=0.1)
     for el in enriched:
-        vis_desc = el.get('visual_description', 'NO MATCH')
-        print(f"    {el['id']}: visual_description=\"{vis_desc[:50]}\"")
+        vis_desc = el.get("visual_description", "NO MATCH")
+        print(f'    {el["id"]}: visual_description="{vis_desc[:50]}"')
 
     # 6. 总结
     print("\n" + "=" * 60)
-    print(f"  PASSED - All checks completed")
+    print("  PASSED - All checks completed")
     print(f"  Model load: {load_time:.1f}s | Detect: {detect_time:.1f}s | Describe: {desc_time:.1f}s")
     print("=" * 60)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(main())

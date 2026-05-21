@@ -12,7 +12,6 @@
 """
 
 import argparse
-import asyncio
 import json
 import sys
 import time
@@ -21,7 +20,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from browser_use_vision.adaptive import AdaptiveVisionStrategy, VisionDecision, assess_dom_confidence
-from benchmarks import SCENARIOS, BenchmarkRunner
 
 
 def run_dom_confidence_benchmark():
@@ -197,34 +195,38 @@ def run_dom_confidence_benchmark():
         decision = strategy.decide(sample["dom"])
         match = decision == sample["expected"]
 
-        results.append({
-            "name": name,
-            "confidence": confidence,
-            "decision": decision.value,
-            "expected": sample["expected"].value,
-            "match": match,
-            "description": sample["description"],
-            "signals": {
-                "interactive": signals.total_interactive,
-                "unlabeled_buttons": signals.unlabeled_buttons,
-                "no_alt_images": signals.images_without_alt,
-                "icons": signals.icon_class_count,
-                "custom_components": signals.custom_component_count,
+        results.append(
+            {
+                "name": name,
+                "confidence": confidence,
+                "decision": decision.value,
+                "expected": sample["expected"].value,
+                "match": match,
+                "description": sample["description"],
+                "signals": {
+                    "interactive": signals.total_interactive,
+                    "unlabeled_buttons": signals.unlabeled_buttons,
+                    "no_alt_images": signals.images_without_alt,
+                    "icons": signals.icon_class_count,
+                    "custom_components": signals.custom_component_count,
+                },
             }
-        })
+        )
 
         status = "✅" if match else "❌"
         print(f"\n  {status} {name}: {sample['description']}")
         print(f"     置信度: {confidence:.2f} | 决策: {decision.value} | 期望: {sample['expected'].value}")
-        print(f"     信号: buttons={signals.total_interactive} unlabeled={signals.unlabeled_buttons} "
-              f"no_alt={signals.images_without_alt} icons={signals.icon_class_count} "
-              f"custom={signals.custom_component_count}")
+        print(
+            f"     信号: buttons={signals.total_interactive} unlabeled={signals.unlabeled_buttons} "
+            f"no_alt={signals.images_without_alt} icons={signals.icon_class_count} "
+            f"custom={signals.custom_component_count}"
+        )
 
     # 汇总
     correct = sum(1 for r in results if r["match"])
     total = len(results)
     print(f"\n{'=' * 70}")
-    print(f"  准确率: {correct}/{total} ({correct/total*100:.0f}%)")
+    print(f"  准确率: {correct}/{total} ({correct / total * 100:.0f}%)")
 
     # 统计各决策的分布
     decision_counts = {}
@@ -300,14 +302,16 @@ def run_vision_api_benchmark():
             n_detected = len(data.get("elements", []))
             api_time = data.get("inference_time_ms", 0)
 
-            results.append({
-                "name": name,
-                "resolution": f"{w}x{h}",
-                "ui_elements": n_elements,
-                "detected": n_detected,
-                "api_time_ms": api_time,
-                "total_time_ms": total_time,
-            })
+            results.append(
+                {
+                    "name": name,
+                    "resolution": f"{w}x{h}",
+                    "ui_elements": n_elements,
+                    "detected": n_detected,
+                    "api_time_ms": api_time,
+                    "total_time_ms": total_time,
+                }
+            )
             print(f"\n  {name} ({w}x{h}, {n_elements} elements):")
             print(f"    检测到: {n_detected} 元素 | 推理: {api_time:.0f}ms | 总耗时: {total_time:.0f}ms")
 
@@ -328,8 +332,12 @@ def run_vision_api_benchmark():
 
 def main():
     parser = argparse.ArgumentParser(description="Browser-Use Vision Benchmark")
-    parser.add_argument("--mode", choices=["adaptive", "vision", "both"], default="both",
-                        help="评测模式: adaptive(自适应策略) / vision(Vision API) / both")
+    parser.add_argument(
+        "--mode",
+        choices=["adaptive", "vision", "both"],
+        default="both",
+        help="评测模式: adaptive(自适应策略) / vision(Vision API) / both",
+    )
     args = parser.parse_args()
 
     if args.mode in ("adaptive", "both"):

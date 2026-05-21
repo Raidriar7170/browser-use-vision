@@ -13,7 +13,6 @@ Browser-Use Vision Enhancement — 核心能力 Demo
 """
 
 import asyncio
-import base64
 import io
 import json
 import sys
@@ -31,7 +30,6 @@ from browser_use_vision.adaptive import (
     VisionDecision,
     assess_dom_confidence,
 )
-from browser_use_vision.grounding import DetectedElement
 from browser_use_vision.grounding.florence import FlorenceBackend
 
 VISION_API_URL = "http://localhost:8100"
@@ -246,7 +244,9 @@ async def demo_florence_detection():
         for i, el in enumerate(elements):
             bbox_str = f"({el.bbox[0]:.3f}, {el.bbox[1]:.3f}, {el.bbox[2]:.3f}, {el.bbox[3]:.3f})"
             center = el.center
-            print(f"    [{i+1:2d}] {el.label:15s}  bbox={bbox_str}  center=({center[0]:.2f}, {center[1]:.2f})  conf={el.confidence:.2f}")
+            print(
+                f"    [{i + 1:2d}] {el.label:15s}  bbox={bbox_str}  center=({center[0]:.2f}, {center[1]:.2f})  conf={el.confidence:.2f}"
+            )
             if el.description:
                 print(f"         描述: {el.description[:80]}")
         print()
@@ -259,11 +259,11 @@ async def demo_florence_detection():
                 desc = await backend.describe_region(img_bytes, elements[0].bbox)
                 elapsed = time.perf_counter() - t0
                 print(f"  ✅ 描述完成！耗时 {elapsed:.2f}s")
-                print(f"  📝 区域描述: \"{desc}\"")
+                print(f'  📝 区域描述: "{desc}"')
             except Exception as e:
                 print(f"  ⚠️  区域描述跳过（远程模式不支持 describe_region）: {type(e).__name__}")
                 # 用检测结果中的 description 代替
-                print(f"  📝 检测时已获取描述: \"{elements[0].description}\"")
+                print(f'  📝 检测时已获取描述: "{elements[0].description}"')
 
     except ImportError:
         print("  ⚠️  Pillow 未安装，使用简单 base64 图片测试")

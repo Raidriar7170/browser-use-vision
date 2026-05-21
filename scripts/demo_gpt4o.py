@@ -9,12 +9,11 @@ Browser-Use Vision Enhancement — GPT-4o 集成测试 (本机运行)
 from __future__ import annotations
 
 import asyncio
-import json
 import os
 import sys
 import time
 import traceback
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 # 项目根目录
@@ -34,12 +33,12 @@ MAX_STEPS = 15
 os.environ["NO_PROXY"] = "localhost,127.0.0.1"
 os.environ["no_proxy"] = "localhost,127.0.0.1"
 # 不设全局 HTTP(S)_PROXY，只在 OpenAI client 里用代理
-for var in ["HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy",
-            "ALL_PROXY", "all_proxy"]:
+for var in ["HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy", "ALL_PROXY", "all_proxy"]:
     os.environ.pop(var, None)
 
-import httpx
 import logging
+
+import httpx
 
 logging.basicConfig(
     level=logging.INFO,
@@ -134,9 +133,7 @@ async def run_baseline(scenario: TestScenario) -> ScenarioResult:
     from browser_use import Agent
     from browser_use.browser.session import BrowserSession
 
-    result = ScenarioResult(
-        scenario_name=scenario.name, agent_type="baseline", success=False
-    )
+    result = ScenarioResult(scenario_name=scenario.name, agent_type="baseline", success=False)
 
     browser = BrowserSession(headless=True)
     try:
@@ -176,9 +173,7 @@ async def run_vision_enhanced(scenario: TestScenario) -> ScenarioResult:
     from browser_use_vision.enhanced_agent import VisionEnhancedAgent
     from browser_use_vision.grounding.florence import FlorenceBackend
 
-    result = ScenarioResult(
-        scenario_name=scenario.name, agent_type="vision_enhanced", success=False
-    )
+    result = ScenarioResult(scenario_name=scenario.name, agent_type="vision_enhanced", success=False)
 
     browser = BrowserSession(headless=True)
     try:
@@ -260,7 +255,7 @@ async def main():
         print(f"{'─' * 70}")
 
         # Baseline
-        print(f"\n  ▶ Running baseline Agent (GPT-4o-mini) ...")
+        print("\n  ▶ Running baseline Agent (GPT-4o-mini) ...")
         bl = await run_baseline(scenario)
         all_results.append(bl)
         if bl.success:
@@ -270,7 +265,7 @@ async def main():
             print(f"    ❌ {bl.error_message[:200]}")
 
         # VisionEnhanced
-        print(f"\n  ▶ Running VisionEnhancedAgent (GPT-4o-mini + Florence-2) ...")
+        print("\n  ▶ Running VisionEnhancedAgent (GPT-4o-mini + Florence-2) ...")
         ve = await run_vision_enhanced(scenario)
         all_results.append(ve)
         if ve.success:

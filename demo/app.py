@@ -14,20 +14,16 @@ Browser-Use Vision Enhancement - Interactive Demo
 import asyncio
 import base64
 import io
-import json
 import sys
-import time
 from pathlib import Path
 
 import gradio as gr
 import httpx
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from browser_use_vision.adaptive import AdaptiveVisionStrategy, VisionDecision, assess_dom_confidence
-from browser_use_vision.grounding import DetectedElement
-
 
 VISION_API_URL = "http://localhost:8100"
 
@@ -65,14 +61,20 @@ def draw_detections(image: Image.Image, elements: list[dict]) -> Image.Image:
     w, h = img.size
 
     colors = [
-        (255, 0, 0), (0, 200, 0), (0, 100, 255),
-        (255, 165, 0), (128, 0, 128), (0, 200, 200),
-        (255, 192, 203), (165, 42, 42), (128, 128, 0),
+        (255, 0, 0),
+        (0, 200, 0),
+        (0, 100, 255),
+        (255, 165, 0),
+        (128, 0, 128),
+        (0, 200, 200),
+        (255, 192, 203),
+        (165, 42, 42),
+        (128, 128, 0),
     ]
 
     for i, el in enumerate(elements):
         bbox = el["bbox"]
-        x1, y1, x2, y2 = int(bbox[0]*w), int(bbox[1]*h), int(bbox[2]*w), int(bbox[3]*h)
+        x1, y1, x2, y2 = int(bbox[0] * w), int(bbox[1] * h), int(bbox[2] * w), int(bbox[3] * h)
         color = colors[i % len(colors)]
 
         # 绘制边框
@@ -101,15 +103,11 @@ def analyze_screenshot(image, threshold):
     img_bytes = buf.getvalue()
 
     try:
-        elements, inference_ms = asyncio.get_event_loop().run_until_complete(
-            detect_elements_api(img_bytes, threshold)
-        )
+        elements, inference_ms = asyncio.get_event_loop().run_until_complete(detect_elements_api(img_bytes, threshold))
     except Exception:
         # 如果没有 event loop，创建一个
         loop = asyncio.new_event_loop()
-        elements, inference_ms = loop.run_until_complete(
-            detect_elements_api(img_bytes, threshold)
-        )
+        elements, inference_ms = loop.run_until_complete(detect_elements_api(img_bytes, threshold))
         loop.close()
 
     if not elements:

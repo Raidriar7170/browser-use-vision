@@ -14,8 +14,6 @@ from __future__ import annotations
 
 import asyncio
 import base64
-import io
-import json
 import os
 import sys
 import time
@@ -30,19 +28,18 @@ OUTPUT_DIR.mkdir(exist_ok=True)
 VISION_API_URL = os.getenv("VISION_API_URL", "http://localhost:8100")
 
 # 不走代理
-for var in ["HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy",
-            "ALL_PROXY", "all_proxy"]:
+for var in ["HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy", "ALL_PROXY", "all_proxy"]:
     os.environ.pop(var, None)
 
 import httpx
 import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-from matplotlib.gridspec import GridSpec
-from PIL import Image, ImageDraw, ImageFont
-import numpy as np
 
+matplotlib.use("Agg")
+import matplotlib.patches as patches
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.gridspec import GridSpec
+from PIL import Image, ImageDraw
 
 # ──────────────────────────────────────────────
 # 测试页面
@@ -73,7 +70,10 @@ async def take_screenshot(url: str, name: str) -> Path:
     screenshot_path = OUTPUT_DIR / f"{name}_original.png"
 
     # 使用完整版 Chromium (非 headless shell)
-    chromium_path = str(Path.home() / "Library/Caches/ms-playwright/chromium-1223/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing")
+    chromium_path = str(
+        Path.home()
+        / "Library/Caches/ms-playwright/chromium-1223/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing"
+    )
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(
@@ -119,9 +119,21 @@ def draw_detection_overlay(image_path: Path, elements: list[dict], name: str) ->
 
     # 颜色方案
     colors = [
-        "#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7",
-        "#DDA0DD", "#98D8C8", "#F7DC6F", "#BB8FCE", "#85C1E9",
-        "#F1948A", "#82E0AA", "#F8C471", "#AED6F1", "#D7BDE2",
+        "#FF6B6B",
+        "#4ECDC4",
+        "#45B7D1",
+        "#96CEB4",
+        "#FFEAA7",
+        "#DDA0DD",
+        "#98D8C8",
+        "#F7DC6F",
+        "#BB8FCE",
+        "#85C1E9",
+        "#F1948A",
+        "#82E0AA",
+        "#F8C471",
+        "#AED6F1",
+        "#D7BDE2",
     ]
 
     for i, elem in enumerate(elements):
@@ -134,7 +146,7 @@ def draw_detection_overlay(image_path: Path, elements: list[dict], name: str) ->
             # 画框
             draw.rectangle([x1, y1, x2, y2], outline=color, width=3)
             # 标签背景
-            label_text = f"{i+1}. {label[:30]}"
+            label_text = f"{i + 1}. {label[:30]}"
             text_bbox = draw.textbbox((x1, y1 - 18), label_text)
             draw.rectangle(
                 [text_bbox[0] - 2, text_bbox[1] - 2, text_bbox[2] + 2, text_bbox[3] + 2],
@@ -160,16 +172,26 @@ def create_side_by_side(original_path: Path, detected_path: Path, name: str, des
     axes[0].set_title("Before: DOM-Only (原始截图)", fontsize=14, pad=10)
     axes[0].axis("off")
     axes[0].text(
-        0.5, -0.05, "Agent 仅依赖 DOM 树文本信息",
-        transform=axes[0].transAxes, ha="center", fontsize=11, color="gray",
+        0.5,
+        -0.05,
+        "Agent 仅依赖 DOM 树文本信息",
+        transform=axes[0].transAxes,
+        ha="center",
+        fontsize=11,
+        color="gray",
     )
 
     axes[1].imshow(np.array(detected))
     axes[1].set_title(f"After: Vision-Enhanced (Florence-2 检测到 {num_elements} 个元素)", fontsize=14, pad=10)
     axes[1].axis("off")
     axes[1].text(
-        0.5, -0.05, "Agent 获得视觉 Grounding 信息辅助决策",
-        transform=axes[1].transAxes, ha="center", fontsize=11, color="gray",
+        0.5,
+        -0.05,
+        "Agent 获得视觉 Grounding 信息辅助决策",
+        transform=axes[1].transAxes,
+        ha="center",
+        fontsize=11,
+        color="gray",
     )
 
     fig.text(0.5, 0.02, desc, ha="center", fontsize=12, style="italic", color="#555")
@@ -195,17 +217,33 @@ def create_adaptive_strategy_diagram() -> Path:
 
     def draw_box(x, y, w, h, text, color, fontsize=10):
         rect = patches.FancyBboxPatch(
-            (x, y), w, h,
+            (x, y),
+            w,
+            h,
             boxstyle="round,pad=0.2",
-            facecolor=color, edgecolor="white", linewidth=1.5, alpha=0.9,
+            facecolor=color,
+            edgecolor="white",
+            linewidth=1.5,
+            alpha=0.9,
         )
         ax.add_patch(rect)
-        ax.text(x + w / 2, y + h / 2, text, ha="center", va="center",
-                fontsize=fontsize, color="white", fontweight="bold", wrap=True)
+        ax.text(
+            x + w / 2,
+            y + h / 2,
+            text,
+            ha="center",
+            va="center",
+            fontsize=fontsize,
+            color="white",
+            fontweight="bold",
+            wrap=True,
+        )
 
     def draw_arrow(x1, y1, x2, y2, label="", color="white"):
         ax.annotate(
-            "", xy=(x2, y2), xytext=(x1, y1),
+            "",
+            xy=(x2, y2),
+            xytext=(x1, y1),
             arrowprops=dict(arrowstyle="->", color=color, lw=2),
         )
         if label:
@@ -235,7 +273,15 @@ def create_adaptive_strategy_diagram() -> Path:
 
     # 输出
     draw_arrow(8, 3.0, 8, 2.4)
-    draw_box(4, 1.4, 8, 1.0, "📤 Enriched System Prompt\n注入视觉检测元素信息到 Agent 上下文\n辅助 LLM 更准确地定位和操作页面元素", "#16213e", 9)
+    draw_box(
+        4,
+        1.4,
+        8,
+        1.0,
+        "📤 Enriched System Prompt\n注入视觉检测元素信息到 Agent 上下文\n辅助 LLM 更准确地定位和操作页面元素",
+        "#16213e",
+        9,
+    )
 
     # 指标
     metrics = [
@@ -311,8 +357,9 @@ def create_performance_chart() -> Path:
 
     bars5 = ax3.barh(confidence_levels, proportions, color=strategy_colors, alpha=0.9, height=0.6)
     for bar, strat in zip(bars5, strategies):
-        ax3.text(bar.get_width() + 0.02, bar.get_y() + bar.get_height() / 2,
-                 strat, va="center", color="white", fontsize=10)
+        ax3.text(
+            bar.get_width() + 0.02, bar.get_y() + bar.get_height() / 2, strat, va="center", color="white", fontsize=10
+        )
     ax3.set_xlabel("Proportion", color="white")
     ax3.set_title("🎯 自适应策略分布 (典型场景)", color="white", fontsize=14, fontweight="bold")
     ax3.set_xlim(0, 1.0)
@@ -334,14 +381,15 @@ def create_performance_chart() -> Path:
 
     for i, (title, desc) in enumerate(advantages):
         y_pos = 0.85 - i * 0.22
-        ax4.text(0.05, y_pos, title, fontsize=13, fontweight="bold", color="#4ECDC4",
-                 transform=ax4.transAxes)
-        ax4.text(0.05, y_pos - 0.08, desc, fontsize=10, color="#aaa",
-                 transform=ax4.transAxes, linespacing=1.5)
+        ax4.text(0.05, y_pos, title, fontsize=13, fontweight="bold", color="#4ECDC4", transform=ax4.transAxes)
+        ax4.text(0.05, y_pos - 0.08, desc, fontsize=10, color="#aaa", transform=ax4.transAxes, linespacing=1.5)
 
     fig.suptitle(
         "Browser-Use Vision Enhancement — Performance Analysis",
-        fontsize=18, fontweight="bold", color="white", y=0.98,
+        fontsize=18,
+        fontweight="bold",
+        color="white",
+        y=0.98,
     )
 
     output_path = OUTPUT_DIR / "performance_chart.png"
@@ -375,8 +423,11 @@ async def main():
 
         # 4. 生成并排对比
         comparison = create_side_by_side(
-            screenshot, annotated, page["name"],
-            page["description"], len(elements),
+            screenshot,
+            annotated,
+            page["name"],
+            page["description"],
+            len(elements),
         )
         all_comparisons.append(comparison)
 

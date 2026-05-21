@@ -25,7 +25,6 @@ import traceback
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
 
 # 确保项目根目录在 sys.path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -54,8 +53,9 @@ logger = logging.getLogger("agent_integration_test")
 @dataclass
 class ScenarioResult:
     """单次场景执行的结果"""
+
     scenario_name: str
-    agent_type: str          # "baseline" | "vision_enhanced"
+    agent_type: str  # "baseline" | "vision_enhanced"
     success: bool
     error_message: str = ""
     elapsed_seconds: float = 0.0
@@ -70,11 +70,12 @@ class ScenarioResult:
 @dataclass
 class TestScenario:
     """测试场景定义"""
+
     name: str
     url: str
     task: str
     description: str
-    difficulty: str          # "easy" | "medium" | "hard"
+    difficulty: str  # "easy" | "medium" | "hard"
 
 
 # ---------------------------------------------------------------------------
@@ -249,9 +250,7 @@ async def run_vision_enhanced(scenario: TestScenario, browser) -> ScenarioResult
 
     except Exception as e:
         result.error_message = f"{type(e).__name__}: {e}"
-        logger.error(
-            f"VisionEnhanced failed on '{scenario.name}': {result.error_message}"
-        )
+        logger.error(f"VisionEnhanced failed on '{scenario.name}': {result.error_message}")
         logger.debug(traceback.format_exc())
 
     return result
@@ -269,9 +268,7 @@ def print_comparison_table(results: list[ScenarioResult]) -> None:
             scenarios_seen.append(r.scenario_name)
 
     sep = "+" + "-" * 22 + "+" + "-" * 18 + "+" + "-" * 10 + "+" + "-" * 14 + "+" + "-" * 8 + "+"
-    header = (
-        f"|{'Scenario':^22}|{'Agent':^18}|{'Success':^10}|{'Time (s)':^14}|{'Steps':^8}|"
-    )
+    header = f"|{'Scenario':^22}|{'Agent':^18}|{'Success':^10}|{'Time (s)':^14}|{'Steps':^8}|"
 
     print("\n")
     print("=" * 76)
@@ -287,9 +284,7 @@ def print_comparison_table(results: list[ScenarioResult]) -> None:
             status = "OK" if r.success else "FAIL"
             time_str = f"{r.elapsed_seconds:.2f}" if r.success else "N/A"
             steps_str = str(r.steps_taken) if r.success else "N/A"
-            print(
-                f"|{sname:^22}|{r.agent_type:^18}|{status:^10}|{time_str:^14}|{steps_str:^8}|"
-            )
+            print(f"|{sname:^22}|{r.agent_type:^18}|{status:^10}|{time_str:^14}|{steps_str:^8}|")
         print(sep)
 
     # 汇总
@@ -301,32 +296,24 @@ def print_comparison_table(results: list[ScenarioResult]) -> None:
     bl_total = len(baseline_results)
     ve_total = len(vision_results)
 
-    bl_avg_time = (
-        sum(r.elapsed_seconds for r in baseline_results if r.success) / max(bl_success, 1)
-    )
-    ve_avg_time = (
-        sum(r.elapsed_seconds for r in vision_results if r.success) / max(ve_success, 1)
-    )
+    bl_avg_time = sum(r.elapsed_seconds for r in baseline_results if r.success) / max(bl_success, 1)
+    ve_avg_time = sum(r.elapsed_seconds for r in vision_results if r.success) / max(ve_success, 1)
 
-    bl_avg_steps = (
-        sum(r.steps_taken for r in baseline_results if r.success) / max(bl_success, 1)
-    )
-    ve_avg_steps = (
-        sum(r.steps_taken for r in vision_results if r.success) / max(ve_success, 1)
-    )
+    bl_avg_steps = sum(r.steps_taken for r in baseline_results if r.success) / max(bl_success, 1)
+    ve_avg_steps = sum(r.steps_taken for r in vision_results if r.success) / max(ve_success, 1)
 
     print("\n  Summary:")
-    print(f"    Baseline          : {bl_success}/{bl_total} passed, "
-          f"avg time {bl_avg_time:.2f}s, avg steps {bl_avg_steps:.1f}")
-    print(f"    VisionEnhanced    : {ve_success}/{ve_total} passed, "
-          f"avg time {ve_avg_time:.2f}s, avg steps {ve_avg_steps:.1f}")
+    print(
+        f"    Baseline          : {bl_success}/{bl_total} passed, "
+        f"avg time {bl_avg_time:.2f}s, avg steps {bl_avg_steps:.1f}"
+    )
+    print(
+        f"    VisionEnhanced    : {ve_success}/{ve_total} passed, "
+        f"avg time {ve_avg_time:.2f}s, avg steps {ve_avg_steps:.1f}"
+    )
 
     # 视觉增强统计汇总
-    total_vision_calls = sum(
-        r.vision_stats.get("total_vision_calls", 0)
-        for r in vision_results
-        if r.vision_stats
-    )
+    total_vision_calls = sum(r.vision_stats.get("total_vision_calls", 0) for r in vision_results if r.vision_stats)
     if total_vision_calls > 0:
         print(f"    Total vision API calls: {total_vision_calls}")
 
@@ -392,12 +379,11 @@ async def main() -> None:
         browser = create_browser()
         try:
             # --- Baseline ---
-            print(f"\n  ▶ Running baseline Agent ...")
+            print("\n  ▶ Running baseline Agent ...")
             bl_result = await run_baseline(scenario, browser)
             all_results.append(bl_result)
             if bl_result.success:
-                print(f"    ✅ Done in {bl_result.elapsed_seconds:.2f}s, "
-                      f"{bl_result.steps_taken} steps")
+                print(f"    ✅ Done in {bl_result.elapsed_seconds:.2f}s, {bl_result.steps_taken} steps")
                 print(f"    Result: {bl_result.final_result[:120]}")
             else:
                 print(f"    ❌ Failed: {bl_result.error_message[:200]}")
@@ -411,12 +397,11 @@ async def main() -> None:
         # --- VisionEnhanced --- (独立 session)
         browser2 = create_browser()
         try:
-            print(f"\n  ▶ Running VisionEnhancedAgent ...")
+            print("\n  ▶ Running VisionEnhancedAgent ...")
             ve_result = await run_vision_enhanced(scenario, browser2)
             all_results.append(ve_result)
             if ve_result.success:
-                print(f"    ✅ Done in {ve_result.elapsed_seconds:.2f}s, "
-                      f"{ve_result.steps_taken} steps")
+                print(f"    ✅ Done in {ve_result.elapsed_seconds:.2f}s, {ve_result.steps_taken} steps")
                 print(f"    Result: {ve_result.final_result[:120]}")
                 if ve_result.vision_stats:
                     vc = ve_result.vision_stats.get("total_vision_calls", 0)

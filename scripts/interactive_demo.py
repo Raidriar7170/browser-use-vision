@@ -33,12 +33,12 @@ PROXY_URL = os.getenv("HTTPS_PROXY", "http://127.0.0.1:1097")
 # 排除本地连接走代理
 os.environ["NO_PROXY"] = "localhost,127.0.0.1"
 os.environ["no_proxy"] = "localhost,127.0.0.1"
-for var in ["HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy",
-            "ALL_PROXY", "all_proxy"]:
+for var in ["HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy", "ALL_PROXY", "all_proxy"]:
     os.environ.pop(var, None)
 
-import httpx
 import logging
+
+import httpx
 
 logging.basicConfig(
     level=logging.INFO,
@@ -55,6 +55,7 @@ logger = logging.getLogger("interactive_demo")
 
 def get_llm(model: str):
     from browser_use.llm.openai.chat import ChatOpenAI
+
     proxy_client = httpx.AsyncClient(
         proxy=PROXY_URL,
         timeout=httpx.Timeout(60.0),
@@ -103,7 +104,7 @@ async def run_agent(task: str, mode: str, model: str, max_steps: int = 20):
 
         print(f"\n  🚀 启动 {agent_label}")
         print(f"  📋 任务: {task}")
-        print(f"  👀 浏览器窗口已打开，观察 Agent 操作...\n")
+        print("  👀 浏览器窗口已打开，观察 Agent 操作...\n")
 
         t0 = time.perf_counter()
         history = await agent.run(max_steps=max_steps)
@@ -174,7 +175,7 @@ def print_comparison(results: list[dict]):
         return
 
     print(f"\n  {'═' * 56}")
-    print(f"  📊 对比结果")
+    print("  📊 对比结果")
     print(f"  {'═' * 56}")
     print(f"  {'指标':<14} {'Baseline':<18} {'Vision Enhanced':<18}")
     print(f"  {'─' * 56}")
@@ -185,7 +186,7 @@ def print_comparison(results: list[dict]):
         pct = (bl["steps"] - ve["steps"]) / bl["steps"] * 100
         print(f"\n  ✅ Vision Enhanced 步数减少 {pct:.0f}%")
     elif ve["steps"] > bl["steps"]:
-        print(f"\n  ⚠️  Vision Enhanced 步数更多")
+        print("\n  ⚠️  Vision Enhanced 步数更多")
 
     if ve.get("vision_stats"):
         adaptive = ve["vision_stats"].get("adaptive_stats", {})
@@ -234,7 +235,7 @@ async def main():
 ║   Browser-Use Vision Enhancement — 交互式 Demo          ║
 ╠══════════════════════════════════════════════════════════╣
 ║  模型: {args.model:<50}║
-║  模式: {', '.join(modes):<50}║
+║  模式: {", ".join(modes):<50}║
 ║  最大步数: {args.max_steps:<47}║
 ║                                                          ║
 ║  浏览器窗口会弹出，你可以实时观看 Agent 操作！           ║
@@ -244,7 +245,7 @@ async def main():
     print("  示例任务:")
     for i, t in enumerate(EXAMPLE_TASKS, 1):
         print(f"    {i}. {t}")
-    print(f"    输入 q 退出\n")
+    print("    输入 q 退出\n")
 
     while True:
         try:

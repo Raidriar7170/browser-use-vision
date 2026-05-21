@@ -14,17 +14,13 @@
 """
 
 import argparse
-import asyncio
-import json
 import logging
 import time
 import uuid
-from typing import Optional
 
 import torch
 import uvicorn
 from fastapi import FastAPI
-from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -107,7 +103,7 @@ async def chat_completions(request: ChatCompletionRequest):
     response_text = _tokenizer.decode(new_tokens, skip_special_tokens=True)
     comp_tokens = len(new_tokens)
 
-    logger.info(f"Generated {comp_tokens} tokens in {gen_time:.1f}s ({comp_tokens/gen_time:.1f} tok/s)")
+    logger.info(f"Generated {comp_tokens} tokens in {gen_time:.1f}s ({comp_tokens / gen_time:.1f} tok/s)")
 
     return ChatCompletionResponse(
         id=f"chatcmpl-{uuid.uuid4().hex[:8]}",
@@ -154,7 +150,7 @@ def load_model(model_name: str, device: str = "auto", gpu_id: int = 1):
     )
     _model.eval()
 
-    logger.info(f"Model loaded in {time.time()-t0:.1f}s on {device}")
+    logger.info(f"Model loaded in {time.time() - t0:.1f}s on {device}")
 
 
 def main():

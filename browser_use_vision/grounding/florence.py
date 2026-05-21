@@ -232,10 +232,12 @@ class FlorenceBackend(VisualGroundingBackend):
                 y1 = min(quad[1], quad[3]) / h
                 x2 = max(quad[2], quad[4]) / w
                 y2 = max(quad[5], quad[7]) / h
-                text_regions.append({
-                    "text": label.strip(),
-                    "bbox": [x1, y1, x2, y2],
-                })
+                text_regions.append(
+                    {
+                        "text": label.strip(),
+                        "bbox": [x1, y1, x2, y2],
+                    }
+                )
 
         logger.info(f"Florence-2 OCR: {len(text_regions)} text regions found")
         return text_regions
@@ -265,10 +267,12 @@ class FlorenceBackend(VisualGroundingBackend):
         for bbox, label in zip(bboxes, labels):
             if len(bbox) >= 4:
                 x1, y1, x2, y2 = bbox[0] / w, bbox[1] / h, bbox[2] / w, bbox[3] / h
-                regions.append({
-                    "caption": label.strip(),
-                    "bbox": [x1, y1, x2, y2],
-                })
+                regions.append(
+                    {
+                        "caption": label.strip(),
+                        "bbox": [x1, y1, x2, y2],
+                    }
+                )
 
         logger.info(f"Florence-2 Dense Caption: {len(regions)} regions found")
         return regions
