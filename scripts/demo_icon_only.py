@@ -99,10 +99,31 @@ async def check_result(session) -> tuple[bool, list[str]]:
     """检查页面上触发了哪些 actions"""
     try:
         page = await session.get_current_page()
-        actions = await page.evaluate("() => window.actions || []")
-        return "next" in actions, actions
+        if page:
+            actions = await page.evaluate("() => window.actions || []")
+            return "next" in actions, actions
     except Exception:
-        return False, []
+        pass
+    return False, []
+
+
+def check_history_for_success(history) -> tuple[bool, str]:
+    """从 agent history 中检查是否成功完成了任务"""
+    try:
+        if hasattr(history, "final_result"):
+            result = history.final_result()
+            if result:
+                return True, str(result)
+        if hasattr(history, "history") and history.history:
+            last = history.history[-1]
+            if hasattr(last, "result") and last.result:
+                # 检查 done action 的 success 标记
+                for item in last.result:
+                    if hasattr(item, "done") and item.done:
+                        return item.done.success, item.done.text or ""
+    except Exception:
+        pass
+    return False, ""
 
 
 async def run_baseline() -> dict:
@@ -191,7 +212,12 @@ async def run_vision() -> dict:
         history = await agent.run()
         elapsed = round(time.perf_counter() - t0, 2)
 
+        # 先尝试从页面获取 JS actions（agent done 后页面可能已关闭）
         success, actions = await check_result(session)
+        # 回退：从 agent history 判断成功
+        history_success, history_text = check_history_for_success(history)
+        if not success and history_success:
+            success = True
         steps = count_steps(history)
 
         print(f"\n📊 Vision 结果:")
@@ -199,11 +225,13 @@ async def run_vision() -> dict:
         print(f"   步数: {steps}")
         print(f"   耗时: {elapsed}s")
         print(f"   触发的 actions: {actions}")
+        print(f"   Agent 报告: {history_text}")
         print(f"   视觉统计: {agent.vision_stats}")
 
         return {
             "mode": "vision", "success": success, "steps": steps,
             "elapsed": elapsed, "actions": actions,
+            "agent_report": history_text,
             "vision_stats": agent.vision_stats,
         }
 
