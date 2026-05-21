@@ -1,86 +1,90 @@
 # 🔍 Browser-Use Vision Enhancement
 
-**为 [browser-use](https://github.com/browser-use/browser-use)（⭐ 94k）浏览器 Agent 框架提供视觉 Grounding 增强的独立模块。**
+**A vision-grounding plugin for [browser-use](https://github.com/browser-use/browser-use) (⭐ 94k) that enables browser agents to understand what they _see_, not just what they read from the DOM.**
 
-**A standalone vision-grounding enhancement module for [browser-use](https://github.com/browser-use/browser-use) (⭐ 94k), the leading browser-agent framework.**
+为 [browser-use](https://github.com/browser-use/browser-use)（⭐ 94k）浏览器 Agent 框架提供视觉 Grounding 增强——让 Agent 不仅能读 DOM，还能"看见"页面。
 
 ---
 
-## ✨ Highlights / 效果亮点
+## 🎯 Motivation / 为什么需要这个项目
 
-| Metric | Value |
-|--------|-------|
-| Adaptive strategy accuracy (8 DOM scene types) | **62%** |
-| Icon/toolbar scene confidence → triggers full vision | **0.15** |
-| Simple form/news page confidence → skips vision | **1.0** |
-| Vision API inference latency | **1.7 – 3.5 s / frame** |
-| Scenes where vision call is skipped (cost saving) | **50%** |
+Modern browser agents (browser-use, Playwright agents, etc.) rely on DOM parsing to understand web pages. This works well for semantic HTML — buttons with labels, links with text. But it **breaks down** on:
 
-> **Core Idea / 核心思路**: Not every browser frame needs an expensive vision model call. This module evaluates DOM confidence first, and only invokes Florence-2 or OmniParser when the DOM is ambiguous (e.g., icon-heavy toolbars, canvas elements). This cuts vision inference costs by half while maintaining grounding accuracy.
->
-> 不是每一帧都需要昂贵的视觉模型推理。本模块先评估 DOM 置信度，仅在 DOM 模糊时（如图标工具栏、Canvas 元素）才调用 Florence-2 或 OmniParser，将视觉推理开销降低 50%。
+| Scenario | DOM-only Agent | Vision-Enhanced Agent |
+|----------|:-:|:-:|
+| Icon-only buttons (no text/aria labels) | ❌ Cannot distinguish | ✅ Identifies by visual shape |
+| Color swatches / visual selectors | ❌ No color awareness | ✅ Recognizes by appearance |
+| Canvas / SVG rendered content | ❌ Invisible to DOM | ✅ OCR + region detection |
+| Dynamic SPA (lazy-loaded content) | ⚠️ May act too early | ✅ Visually confirms content |
+
+现代浏览器 Agent 依赖 DOM 解析理解页面。但在纯图标按钮、颜色选择器、Canvas 渲染内容等场景下，DOM 无法提供足够信息。本项目通过视觉模型弥补这一缺陷。
+
+---
+
+## ✨ Key Results / 核心效果
+
+### Baseline vs Vision-Enhanced: Icon-Only Task
+
+| | Baseline Agent (DOM-only) | Vision-Enhanced Agent |
+|---|:-:|:-:|
+| **Result** | ❌ FAILED (timeout) | ✅ SUCCESS |
+| **Steps** | 29+ (blind clicking loop) | **2** (identify → click → done) |
+| **Time** | >120s | **~19s** |
+| **Behavior** | Randomly clicks buttons, cannot distinguish icons | SoM + OCR identifies "Next Track" among 10 unlabeled buttons |
+
+### E2E Integration Tests (3/3 Pass)
+
+| Scenario | Steps | Time | Visual Elements | Description |
+|----------|:-----:|:----:|:----:|-------------|
+| 🎵 Icon-Only Music Player | 2 | 19.0s | 8 | SVG icon buttons, no text labels |
+| 📊 Dynamic SPA Dashboard | 2 | 22.3s | 18 | Content loads after 2s delay |
+| 🎨 Visual Color Picker | 2 | 17.4s | 14 | Color swatches identified by appearance |
+
+**Average: 2 steps, 19.6s, 100% first-attempt success rate.**
 
 ---
 
 ## 🏗️ Architecture / 系统架构
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                      VisionEnhancedAgent                            │
-│            (inherits browser_use.Agent, zero-invasive)              │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│   ┌───────────────┐     ┌──────────────────────────────────────┐   │
-│   │  browser-use  │     │      Adaptive Vision Strategy        │   │
-│   │  Agent Loop   │────▶│  ┌────────────────────────────────┐  │   │
-│   │  (DOM + LLM)  │     │  │  DOM Confidence Evaluator      │  │   │
-│   └───────────────┘     │  │  ─ tag semantics analysis      │  │   │
-│                         │  │  ─ aria/role attribute check    │  │   │
-│                         │  │  ─ interactive element ratio    │  │   │
-│                         │  │  ─ icon/image density scoring   │  │   │
-│                         │  └────────────┬───────────────────┘  │   │
-│                         │               │                       │   │
-│                         │        confidence < θ ?               │   │
-│                         │         ╱          ╲                   │   │
-│                         │       YES           NO                │   │
-│                         │        ↓             ↓                │   │
-│                         │  ┌──────────┐  ┌──────────┐          │   │
-│                         │  │  Vision  │  │   Skip   │          │   │
-│                         │  │  Backend │  │  (use    │          │   │
-│                         │  │  Call    │  │   DOM)   │          │   │
-│                         │  └────┬─────┘  └──────────┘          │   │
-│                         └───────┼──────────────────────────────┘   │
-│                                 │                                   │
-│                    ┌────────────┴────────────┐                     │
-│                    ▼                         ▼                     │
-│          ┌─────────────────┐      ┌──────────────────┐            │
-│          │   Florence-2    │      │  OmniParser V2   │            │
-│          │   Backend       │      │  Backend          │            │
-│          │ ─ Object Det.   │      │ ─ UI Element Det. │            │
-│          │ ─ Region Desc.  │      │ ─ Specialized for │            │
-│          │ ─ OCR           │      │   Web/Desktop UI  │            │
-│          └────────┬────────┘      └────────┬─────────┘            │
-│                   └──────────┬─────────────┘                      │
-│                              ▼                                     │
-│                    ┌──────────────────┐                            │
-│                    │  Grounding       │                            │
-│                    │  Results         │                            │
-│                    │  → bboxes        │                            │
-│                    │  → labels        │                            │
-│                    │  → OCR text      │                            │
-│                    └──────────────────┘                            │
-└─────────────────────────────────────────────────────────────────────┘
-                              │
-                    ┌─────────┴──────────┐
-                    │   Vision API       │
-                    │   (FastAPI Server)  │
-                    │   /detect           │
-                    │   /describe         │
-                    │   /ocr              │
-                    └────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                    VisionEnhancedAgent                        │
+│            (inherits browser_use.Agent, zero-invasive)        │
+├──────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ┌──────────────┐    ┌──────────────┐    ┌────────────────┐ │
+│  │  SoM Module  │───▶│  Florence-2  │───▶│ LLM (GPT-4o)  │ │
+│  │  Set-of-Mark │    │ OCR + Region │    │ Decision Maker │ │
+│  │  Annotator   │    │  Detection   │    │                │ │
+│  └──────────────┘    └──────────────┘    └────────────────┘ │
+│         │                   │                     │          │
+│         ▼                   ▼                     ▼          │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │              Enriched Page Context                    │   │
+│  │  • Numbered interactive elements with bounding boxes  │   │
+│  │  • OCR text from non-DOM rendered content            │   │
+│  │  • Region descriptions (colors, icons, shapes)        │   │
+│  └──────────────────────────────────────────────────────┘   │
+│                            │                                 │
+│                            ▼                                 │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │          browser-use Action Execution                 │   │
+│  │          click / type / scroll / done                 │   │
+│  └──────────────────────────────────────────────────────┘   │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
+                             │
+                   ┌─────────┴──────────┐
+                   │  Vision API Server  │
+                   │  (FastAPI on GPU)   │
+                   │  /ocr  /regions     │
+                   │  /detect /describe  │
+                   └────────────────────┘
 ```
 
-**Key Design Principle / 关键设计原则**: The entire module is a *non-invasive overlay* — `VisionEnhancedAgent` inherits from `browser_use.Agent` without modifying a single line in the upstream repository.
+**Key Design**: The entire module is a _non-invasive overlay_ — `VisionEnhancedAgent` inherits from `browser_use.Agent` without modifying a single line in the upstream repository. `pip install --upgrade browser-use` won't break anything.
+
+关键设计：整个模块是**无侵入扩展**——`VisionEnhancedAgent` 通过类继承 `browser_use.Agent`，不修改上游任何一行代码。
 
 ---
 
@@ -88,271 +92,198 @@
 
 ```
 browser-use-vision/
-├── README.md
+├── browser_use_vision/             # Core package (1,797 lines)
+│   ├── enhanced_agent.py           # VisionEnhancedAgent — main entry point
+│   ├── som.py                      # Set-of-Mark screenshot annotation
+│   ├── grounding/                  # Vision backends
+│   │   ├── base.py                 # Abstract VisualGroundingBackend
+│   │   ├── florence.py             # Florence-2 backend (OCR + regions)
+│   │   └── omniparser.py          # OmniParser V2 backend (UI detection)
+│   ├── adaptive/                   # Adaptive vision strategy
+│   │   └── __init__.py             # DOM confidence evaluator + strategy
+│   ├── server.py                   # FastAPI vision inference server
+│   └── config.py                   # Configuration management
+│
+├── tests/                          # Test suite (42 tests, 496 lines)
+│   ├── test_som.py                 # SoM annotation tests (24 tests)
+│   ├── test_grounding.py           # Grounding module tests
+│   └── test_adaptive.py            # Adaptive strategy tests
+│
+├── scripts/                        # Demo & evaluation scripts
+│   ├── e2e_test.py                 # E2E integration test runner (3 scenarios)
+│   ├── demo_icon_only.py           # Baseline vs Vision comparison demo
+│   └── ...                         # Other demo/test scripts
+│
+├── demo/                           # HTML test fixtures
+│   ├── icon_only_player.html       # SVG icon-only music player
+│   ├── dynamic_spa.html            # Dynamic content dashboard
+│   ├── color_picker.html           # Visual color swatch picker
+│   └── ...                         # Additional test pages
+│
+├── output/                         # Test results & reports
+│   ├── demo_results/               # Baseline vs Vision comparison report
+│   └── e2e_results/                # E2E test results + HTML report
+│
+├── .github/workflows/tests.yml     # CI: lint + unit tests
 ├── pyproject.toml                  # Project config & dependencies
-├── LICENSE                         # MIT License
-│
-├── browser_use_vision/             # Core package
-│   ├── __init__.py
-│   │
-│   ├── agent/                      # Enhanced Agent
-│   │   ├── __init__.py
-│   │   └── vision_agent.py         # VisionEnhancedAgent class
-│   │
-│   ├── vision/                     # Vision backends
-│   │   ├── __init__.py
-│   │   ├── base.py                 # Abstract VisionBackend interface
-│   │   ├── florence2.py            # Florence-2 backend (det + desc + OCR)
-│   │   └── omniparser.py           # OmniParser V2 backend (UI detection)
-│   │
-│   ├── strategy/                   # Adaptive vision strategy
-│   │   ├── __init__.py
-│   │   ├── confidence.py           # DOM confidence evaluator
-│   │   └── adaptive.py             # Adaptive strategy controller
-│   │
-│   ├── api/                        # Vision API server
-│   │   ├── __init__.py
-│   │   ├── server.py               # FastAPI endpoints
-│   │   └── schemas.py              # Pydantic request/response models
-│   │
-│   └── utils/                      # Utilities
-│       ├── __init__.py
-│       ├── image.py                # Screenshot processing helpers
-│       └── dom_analysis.py         # DOM feature extraction
-│
-├── tests/                          # Test suite
-│   ├── test_florence2.py           # Florence-2 backend tests
-│   ├── test_omniparser.py          # OmniParser backend tests
-│   ├── test_confidence.py          # DOM confidence evaluator tests
-│   ├── test_adaptive_strategy.py   # Adaptive strategy integration tests
-│   └── test_api.py                 # API endpoint tests
-│
-├── evaluation/                     # Benchmark & evaluation
-│   ├── scenarios/                  # 8 DOM scene type definitions
-│   ├── run_eval.py                 # Evaluation runner
-│   └── results/                    # Evaluation output & reports
-│
-├── demo/                           # Demo application
-│   └── gradio_app.py              # Gradio interactive demo UI
-│
-├── .github/
-│   └── workflows/
-│       └── test.yml                # CI: lint + unit tests
-│
-└── .gitignore
+└── README.md
 ```
 
 ---
 
 ## 🚀 Quick Start / 快速开始
 
-### Prerequisites / 前置要求
+### Prerequisites
 
 - Python ≥ 3.11
-- CUDA-capable GPU (recommended for Florence-2 / OmniParser inference)
+- CUDA GPU (for Florence-2 inference server)
+- OpenAI API key (or compatible LLM endpoint)
 
-### Installation / 安装
+### Installation
 
 ```bash
-# Clone
-git clone https://github.com/<your-username>/browser-use-vision.git
+git clone https://github.com/Raidriar7170/browser-use-vision.git
 cd browser-use-vision
 
-# Create virtual environment
 python -m venv .venv
-source .venv/bin/activate    # Linux/macOS
-# .venv\Scripts\activate     # Windows
+source .venv/bin/activate
 
-# Install dependencies
 pip install -e ".[dev]"
-
-# Install Playwright browsers (required by browser-use)
 playwright install chromium
 ```
 
-### Usage / 使用
-
-#### 1. Start the Vision API Server / 启动视觉推理服务
+### 1. Start the Vision API Server (on GPU machine)
 
 ```bash
-python -m browser_use_vision.api.server --port 8000 --backend florence2
+# On a machine with GPU (e.g., A100)
+pip install torch transformers
+python -m browser_use_vision.server --port 8100
+
+# Health check
+curl http://localhost:8100/health
+# → {"status": "ok", "backend": "FlorenceBackend"}
 ```
 
-#### 2. Use VisionEnhancedAgent / 使用增强 Agent
+The server loads Florence-2-large (~3GB) and exposes endpoints:
+- `POST /ocr` — OCR with region coordinates
+- `POST /regions` — Dense region captioning
+- `POST /detect` — Object detection
+- `POST /describe` — Region description by text query
+
+### 2. Use VisionEnhancedAgent
 
 ```python
-from langchain_openai import ChatOpenAI
-from browser_use_vision.agent import VisionEnhancedAgent
+import asyncio
+from browser_use.browser.session import BrowserSession
+from browser_use_vision.enhanced_agent import VisionEnhancedAgent
+from browser_use_vision.grounding.florence import FlorenceBackend
 
-agent = VisionEnhancedAgent(
-    task="Find the settings icon on the toolbar and click it",
-    llm=ChatOpenAI(model="gpt-4o"),
-    vision_api_url="http://localhost:8000",
-    strategy="adaptive",  # "adaptive" | "always" | "never"
-)
-result = await agent.run()
+async def main():
+    session = BrowserSession(headless=True)
+    backend = FlorenceBackend(remote_url="http://localhost:8100")
+
+    agent = VisionEnhancedAgent(
+        task="Click the 'Next Track' button on this music player",
+        llm=ChatOpenAI(model="gpt-4o-mini"),
+        browser_session=session,
+        vision_backend=backend,
+        use_vision=True,
+        enable_som=True,        # Set-of-Mark annotation
+        enable_adaptive=False,  # Force vision every step
+    )
+
+    history = await agent.run()
+    print("Done:", history.final_result())
+
+asyncio.run(main())
 ```
 
-#### 3. Try the Gradio Demo / 体验 Gradio 演示
+### 3. Run Tests
 
 ```bash
-python demo/gradio_app.py
-# Open http://localhost:7860 in your browser
-```
+# Unit tests (42 tests)
+pytest tests/ -v
 
----
+# E2E integration tests (requires Vision API + HTTP server)
+python scripts/e2e_test.py
 
-## 📊 Evaluation Results / 评测结果
-
-### Adaptive Strategy Accuracy by Scene Type / 自适应策略各场景准确率
-
-| Scene Type / 场景类型 | DOM Confidence | Strategy Decision | Correct? |
-|---|---|---|---|
-| 🔧 Icon-heavy Toolbar / 图标工具栏 | 0.15 | ✅ Full Vision | ✔ |
-| 🖼️ Canvas / 画布元素 | 0.22 | ✅ Full Vision | ✔ |
-| 📊 Complex Dashboard / 复杂仪表盘 | 0.38 | ✅ Full Vision | ✔ |
-| 🎨 Custom Web Components / 自定义组件 | 0.45 | ✅ Full Vision | ✔ |
-| 📋 Data Table / 数据表格 | 0.72 | ⚠️ Partial Vision | ✔ |
-| 📝 Simple Form / 简单表单 | 1.00 | ⏭️ Skip Vision | ✔ |
-| 📰 News Article / 新闻文章 | 1.00 | ⏭️ Skip Vision | ✔ |
-| 🔗 Navigation Menu / 导航菜单 | 0.88 | ⏭️ Skip Vision | ✘ |
-
-**Overall Accuracy / 总体准确率: 62% (5/8 scenes)**
-
-### Agent Integration Test / Agent 集成测试
-
-Real browser-use Agent tests with Qwen2.5-7B + Florence-2, comparing baseline (DOM-only) vs vision-enhanced agent on live websites:
-
-| Scenario | Agent | Success | Time (s) | Steps | Vision Calls |
-|----------|-------|---------|----------|-------|-------------|
-| Extract page title (easy) | Baseline | ✅ | 23.7 | 3 | 0 |
-| Extract page title (easy) | **VisionEnhanced** | ✅ | 38.0 | 6 | **4** |
-| Fill form (medium) | Baseline | ✅ | 88.2 | 12 | 0 |
-| Fill form (medium) | **VisionEnhanced** | ✅ | 55.3 | 7 | **3** |
-| GitHub trending (hard) | Baseline | ⚠️ | 107.6 | 11 | 0 |
-| GitHub trending (hard) | **VisionEnhanced** | ⚠️ | 85.4 | 10 | **5** |
-
-实际 Agent 集成测试（Qwen2.5-7B + Florence-2），对比 baseline（纯 DOM）与视觉增强 Agent 在真实网站上的表现。
-
-Key observations / 关键发现:
-- **Vision enrichment works end-to-end**: Florence-2 detects UI elements (~1.2s/call) and injects descriptions into Agent context
-- **Adaptive strategy triggers correctly**: Skips vision on simple pages (DOM confidence ≥ 0.8), forces vision on loop detection
-- **Loop recovery**: VisionEnhanced agent detects stagnation (via `consecutive_stagnant_pages`) and automatically activates vision for richer context
-- **LLM bottleneck**: Qwen2.5-7B struggles with browser-use's structured output schema (designed for GPT-4o/Claude); this affects both agents equally
-
-### Performance / 性能指标
-
-| Metric | Value |
-|--------|-------|
-| Florence-2 inference latency | 1.2 – 1.8 s/call |
-| DOM confidence evaluation | < 5 ms |
-| Vision enrichment overhead per step | ~1.5 s (when triggered) |
-| Adaptive skip rate | **50%** of steps (simple pages skipped) |
-| End-to-end overhead (adaptive) | ~0.9 s/step avg (vs 1.5 s always-on) |
-
-### Cost Analysis / 开销分析
-
-```
-Without adaptive strategy:  Every step → vision model → ~1.5s overhead
-With adaptive strategy:     50% steps skipped → ~0.9s avg overhead
-                            Latency saving ≈ 40% per agent run
+# Single scenario
+python scripts/e2e_test.py --scenario icon_only
 ```
 
 ---
 
 ## 🔬 Technical Details / 技术细节
 
-### 1. Florence-2 Vision Backend / Florence-2 视觉后端
+### 1. SoM (Set-of-Mark) Annotation
 
-Florence-2 (Microsoft) is a unified vision foundation model supporting multiple tasks via prompt-based task dispatching:
+The SoM module overlays numbered labels on interactive elements in the screenshot before sending it to the LLM. This gives the LLM a visual "index" to reference when deciding which element to click.
 
-- **`<OD>`** — Object Detection: returns bounding boxes + labels for all detected objects
-- **`<CAPTION_TO_PHRASE_GROUNDING>`** — Region Description: given a text query, locates corresponding UI regions
-- **`<OCR_WITH_REGION>`** — OCR: extracts text with spatial coordinates
-
-Florence-2 是微软的统一视觉基础模型，通过 prompt 切换任务：目标检测、区域描述、带坐标的 OCR。
+SoM 模块在截图上为交互元素标注编号标签，让 LLM 在决策时有视觉参照。
 
 ```python
-class Florence2Backend(VisionBackend):
-    def detect(self, image: PIL.Image) -> list[Detection]:
-        """Run <OD> task, return bounding boxes with labels."""
+from browser_use_vision.som import SoMAnnotator
 
-    def describe_region(self, image: PIL.Image, query: str) -> list[GroundedPhrase]:
-        """Run <CAPTION_TO_PHRASE_GROUNDING>, locate UI elements by description."""
-
-    def ocr(self, image: PIL.Image) -> list[OCRResult]:
-        """Run <OCR_WITH_REGION>, extract text with coordinates."""
+annotator = SoMAnnotator()
+annotated_image = annotator.annotate(screenshot, interactive_elements)
+# → Screenshot with [0], [1], [2]... labels on buttons/links/inputs
 ```
 
-### 2. OmniParser V2 Backend / OmniParser V2 后端
+### 2. Florence-2 Vision Backend
 
-OmniParser V2 (Microsoft) is specialized for UI understanding — trained specifically on web/desktop interface screenshots. It provides higher accuracy on standard UI widgets (buttons, dropdowns, checkboxes) compared to general-purpose detection models.
+[Florence-2](https://huggingface.co/microsoft/Florence-2-large) (Microsoft) is a unified vision foundation model. We use two key capabilities:
 
-OmniParser V2 是微软专为 UI 理解训练的模型，对标准 UI 控件（按钮、下拉框、复选框）检测精度优于通用目标检测模型。
+- **`OCR_WITH_REGION`** — Extracts text with bounding box coordinates from screenshots. Critical for reading text rendered in Canvas, SVG, or custom fonts that DOM cannot access.
+- **`DENSE_REGION_CAPTION`** — Generates descriptions for all detected regions. Identifies icons, colors, shapes — exactly what DOM-only agents miss.
 
-### 3. DOM Confidence Evaluator / DOM 置信度评估器
+Florence-2（微软）是统一视觉基础模型。我们用 OCR_WITH_REGION 提取渲染文本坐标，用 DENSE_REGION_CAPTION 识别图标、颜色、形状。
 
-The confidence evaluator analyzes the current page DOM to decide whether visual grounding is necessary:
+### 3. Adaptive Vision Strategy
 
-置信度评估器分析当前页面 DOM，判断是否需要启用视觉 Grounding：
+Not every page needs expensive vision inference. The adaptive strategy evaluates DOM quality first:
 
-```python
-class DOMConfidenceEvaluator:
-    """
-    Scoring factors (each normalized to [0, 1]):
-      1. Semantic tag coverage — ratio of interactive elements with
-         meaningful tags (<button>, <input>, <a>) vs generic (<div>, <span>)
-      2. ARIA attribute coverage — percentage of elements with
-         aria-label, role, or title attributes
-      3. Icon/image density — ratio of <img>, <svg>, <i class="icon-*">
-         to total interactive elements (high → low confidence)
-      4. Text content ratio — fraction of elements containing visible
-         text labels (low text → low confidence)
+```
+DOM Confidence Score (0-1):
+  → High (≥0.8): Rich semantic tags, aria-labels → Skip vision, use DOM
+  → Medium (0.4-0.8): Mixed signals → Partial vision
+  → Low (<0.4): Icon-heavy, Canvas, custom components → Full vision
 
-    Final confidence = weighted_mean(factors)
-    Threshold θ = 0.5 (configurable)
-    """
-
-    def evaluate(self, dom_tree: DOMElementNode) -> float:
-        """Return confidence score in [0, 1]. Lower → needs vision."""
+Result: ~50% of steps skip vision entirely → 40% latency reduction
 ```
 
-### 4. VisionEnhancedAgent / 视觉增强 Agent
+### 4. VisionEnhancedAgent
+
+Non-invasive extension of `browser_use.Agent`:
 
 ```python
-from browser_use import Agent
-
 class VisionEnhancedAgent(Agent):
     """
-    Non-invasive extension of browser-use Agent.
+    Overrides multi_act() to inject vision grounding into
+    the LLM context before each decision step.
 
-    Overrides the state-observation step to optionally inject
-    vision grounding results into the LLM context, without
-    modifying any upstream browser-use code.
-
-    Strategies:
-      - "adaptive": evaluate DOM confidence, call vision only when needed
-      - "always":   call vision model on every frame
-      - "never":    pure DOM mode (baseline, equivalent to original Agent)
+    Pipeline per step:
+      1. Take screenshot
+      2. SoM: annotate interactive elements with numbered labels
+      3. Florence-2: OCR + region detection on screenshot
+      4. Merge: combine DOM tree + visual descriptions
+      5. LLM: decide action with enriched context
+      6. Execute: browser-use action (click, type, etc.)
     """
 ```
 
-**Design choice / 设计选择**: By using Python class inheritance rather than monkey-patching or forking, this module remains compatible with upstream browser-use updates — `pip install --upgrade browser-use` won't break anything.
+---
 
-通过 Python 类继承而非 monkey-patch 或 fork，本模块与上游 browser-use 更新保持兼容。
+## 📊 Performance / 性能
 
-### 5. Vision API Server / 视觉 API 服务
-
-FastAPI server exposing vision capabilities as RESTful endpoints:
-
-```
-POST /detect          — Object detection on screenshot
-POST /describe        — Grounded phrase detection by text query
-POST /ocr             — OCR with bounding boxes
-GET  /health          — Health check & model status
-```
-
-Supports hot-swapping backends (Florence-2 ↔ OmniParser) via configuration, and batched inference for multi-tab scenarios.
+| Metric | Value |
+|--------|-------|
+| Florence-2 OCR latency | ~1.0s / call (A100) |
+| Florence-2 region detection | ~0.5s / call (A100) |
+| SoM annotation overhead | < 50ms |
+| End-to-end step time (with vision) | ~10s (including LLM) |
+| Adaptive skip rate | 50% of steps |
+| Unit tests | 42 passing |
+| E2E scenarios | 3/3 passing |
 
 ---
 
@@ -360,41 +291,31 @@ Supports hot-swapping backends (Florence-2 ↔ OmniParser) via configuration, an
 
 | Component | Technology | Purpose |
 |---|---|---|
-| Language | Python 3.11 | Core runtime |
-| Deep Learning | PyTorch 2.1 | Model inference engine |
-| Model Hub | transformers 4.41 | Florence-2 model loading |
-| API Server | FastAPI | Vision inference API |
-| Data Models | Pydantic v2 | Request/response validation |
-| Demo UI | Gradio | Interactive demo interface |
-| Browser Agent | browser-use | Upstream agent framework |
-| Browser Engine | Playwright | Browser automation |
+| Core Runtime | Python 3.11 | Language |
+| Browser Agent | browser-use 0.12.7 | Upstream agent framework |
+| Browser Engine | Playwright + Chromium | Browser automation |
+| Vision Model | Florence-2-large (Microsoft) | OCR, region detection, captioning |
+| Vision API | FastAPI + Uvicorn | GPU inference server |
+| LLM | GPT-4o-mini (via OpenAI API) | Agent decision making |
+| Deep Learning | PyTorch 2.1 + transformers | Model inference |
+| Data Models | Pydantic v2 | Schema validation |
 | Testing | pytest + pytest-asyncio | Unit & integration tests |
-| CI/CD | GitHub Actions | Automated testing pipeline |
-
----
-
-## 🧪 Running Tests / 运行测试
-
-```bash
-# Run all tests
-pytest tests/ -v
-
-# Run specific test module
-pytest tests/test_confidence.py -v
-
-# Run with coverage
-pytest tests/ --cov=browser_use_vision --cov-report=term-missing
-```
+| CI/CD | GitHub Actions | Automated test pipeline |
+| Image Processing | Pillow | Screenshot manipulation |
 
 ---
 
 ## 🗺️ Roadmap
 
-- [ ] Integrate SoM (Set-of-Mark) prompting for improved LLM grounding
-- [ ] Add GroundingDINO as alternative detection backend
+- [x] Florence-2 vision backend with OCR + region detection
+- [x] SoM (Set-of-Mark) screenshot annotation
+- [x] Adaptive vision strategy (DOM confidence scoring)
+- [x] E2E integration tests with HTML fixtures
+- [x] CI pipeline (GitHub Actions)
+- [ ] GroundingDINO as alternative detection backend
 - [ ] Benchmark against WebArena / Mind2Web evaluation suites
-- [ ] Support video stream mode for real-time agent observation
-- [ ] Confidence evaluator v2: learn threshold from historical agent traces
+- [ ] Video stream mode for real-time agent observation
+- [ ] Confidence evaluator v2: learn threshold from agent traces
 
 ---
 
@@ -404,26 +325,26 @@ MIT License. See [LICENSE](LICENSE) for details.
 
 ---
 
-## 📌 Summary / 项目总结
+## 📌 Project Summary / 项目总结
 
-> **For Recruiters & Hiring Managers / 面向招聘者：**
+> **For Recruiters & Hiring Managers:**
 >
 > This project demonstrates end-to-end engineering skills in building a **production-grade ML-powered browser agent enhancement**:
 >
-> - **Systems Design** — Architected a modular, non-invasive plugin system for a popular open-source framework (94k ⭐), using clean OOP inheritance and dependency injection patterns
-> - **ML Engineering** — Integrated and served two state-of-the-art vision foundation models (Florence-2, OmniParser V2) with PyTorch, designing a unified backend abstraction for hot-swappable model selection
-> - **Performance Optimization** — Designed an adaptive inference strategy that reduces vision model invocations by 50% through rule-based DOM confidence scoring, balancing accuracy vs. latency
-> - **API & Infrastructure** — Built a FastAPI-based inference server with Pydantic schema validation, health checks, and a Gradio demo interface
-> - **Evaluation & Benchmarking** — Created a structured evaluation framework covering 8 representative DOM scene types with quantitative accuracy and latency metrics
-> - **Software Engineering** — Full CI pipeline, typed codebase, comprehensive test suite, clear project structure following Python packaging best practices
+> - **Systems Design** — Architected a modular, non-invasive plugin for a popular open-source framework (94k ⭐), using clean class inheritance — zero upstream modifications
+> - **ML Engineering** — Deployed Florence-2 vision foundation model as a GPU inference service; designed SoM (Set-of-Mark) annotation pipeline for visual grounding
+> - **Performance Optimization** — Adaptive inference strategy reduces vision model calls by 50% through rule-based DOM confidence scoring
+> - **Quantitative Results** — Vision-enhanced agent solves icon-only tasks in 2 steps (vs. 29+ step timeout for baseline); 3/3 E2E scenarios pass with 100% first-attempt success
+> - **Software Engineering** — 1,800-line core module, 42 unit tests, 3 E2E integration tests, CI pipeline, typed Python codebase
 >
 > ---
 >
-> 本项目展示了构建**生产级 ML 驱动的浏览器 Agent 增强系统**的全栈工程能力：
+> **面向招聘者：**
 >
-> - **系统设计** — 为热门开源框架（94k ⭐）设计了模块化、无侵入的插件架构，采用面向对象继承和依赖注入
-> - **ML 工程** — 集成并部署了两个 SOTA 视觉基础模型（Florence-2、OmniParser V2），设计统一后端抽象支持热切换
-> - **性能优化** — 设计自适应推理策略，通过 DOM 置信度评估将视觉模型调用减少 50%，兼顾准确率与延迟
-> - **API 与基础设施** — 基于 FastAPI 构建推理服务，Pydantic 模式验证，健康检查，Gradio 演示界面
-> - **评测体系** — 构建覆盖 8 类 DOM 场景的结构化评测框架，提供量化准确率与延迟指标
-> - **工程规范** — 完整 CI 流水线、类型化代码、全面测试套件、符合 Python 打包最佳实践的项目结构
+> 本项目展示了构建**生产级 ML 浏览器 Agent 增强系统**的全栈工程能力：
+>
+> - **系统设计** — 为热门开源框架（94k ⭐）设计无侵入插件架构，零上游修改
+> - **ML 工程** — 部署 Florence-2 视觉基础模型为 GPU 推理服务；设计 SoM 标注管线实现视觉定位
+> - **性能优化** — 自适应推理策略通过 DOM 置信度评估将视觉模型调用减少 50%
+> - **量化结果** — 视觉增强 Agent 在纯图标任务中 2 步完成（基线 29+ 步超时）；3/3 端到端场景通过，100% 首次成功率
+> - **工程规范** — 1800 行核心模块、42 单元测试、3 个 E2E 集成测试、CI 流水线、类型化 Python 代码
