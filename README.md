@@ -5,7 +5,10 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 
-**A vision-grounding plugin for [browser-use](https://github.com/browser-use/browser-use) (⭐ 94k) that enables browser agents to understand what they _see_, not just what they read from the DOM.**
+**A vision-grounding plugin for
+[browser-use](https://github.com/browser-use/browser-use) (⭐ 94k)
+that enables browser agents to understand what they _see_,
+not just what they read from the DOM.**
 
 为 [browser-use](https://github.com/browser-use/browser-use)（⭐ 94k）浏览器 Agent 框架提供视觉 Grounding 增强——让 Agent 不仅能读 DOM，还能"看见"页面。
 
@@ -13,7 +16,9 @@
 
 ## 🎯 Motivation / 为什么需要这个项目
 
-Modern browser agents (browser-use, Playwright agents, etc.) rely on DOM parsing to understand web pages. This works well for semantic HTML — buttons with labels, links with text. But it **breaks down** on:
+Modern browser agents (browser-use, Playwright agents, etc.) rely on DOM parsing
+to understand web pages. This works well for semantic HTML — buttons with labels,
+links with text. But it **breaks down** on:
 
 | Scenario | DOM-only Agent | Vision-Enhanced Agent |
 |----------|:-:|:-:|
@@ -22,7 +27,8 @@ Modern browser agents (browser-use, Playwright agents, etc.) rely on DOM parsing
 | Canvas / SVG rendered content | ❌ Invisible to DOM | ✅ OCR + region detection |
 | Dynamic SPA (lazy-loaded content) | ⚠️ May act too early | ✅ Visually confirms content |
 
-现代浏览器 Agent 依赖 DOM 解析理解页面。但在纯图标按钮、颜色选择器、Canvas 渲染内容等场景下，DOM 无法提供足够信息。本项目通过视觉模型弥补这一缺陷。
+现代浏览器 Agent 依赖 DOM 解析理解页面。但在纯图标按钮、颜色选择器、Canvas 渲染内容等场景下，
+DOM 无法提供足够信息。本项目通过视觉模型弥补这一缺陷。
 
 ---
 
@@ -87,9 +93,13 @@ Modern browser agents (browser-use, Playwright agents, etc.) rely on DOM parsing
                    └────────────────────┘
 ```
 
-**Key Design**: The entire module is a _non-invasive overlay_ — `VisionEnhancedAgent` inherits from `browser_use.Agent` without modifying a single line in the upstream repository. `pip install --upgrade browser-use` won't break anything.
+**Key Design**: The entire module is a _non-invasive overlay_ —
+`VisionEnhancedAgent` inherits from `browser_use.Agent` without modifying
+a single line in the upstream repository.
+`pip install --upgrade browser-use` won't break anything.
 
-关键设计：整个模块是**无侵入扩展**——`VisionEnhancedAgent` 通过类继承 `browser_use.Agent`，不修改上游任何一行代码。
+关键设计：整个模块是**无侵入扩展**——`VisionEnhancedAgent` 通过类继承
+`browser_use.Agent`，不修改上游任何一行代码。
 
 ---
 
@@ -239,7 +249,9 @@ python scripts/e2e_test.py --scenario icon_only
 
 ### 1. SoM (Set-of-Mark) Annotation
 
-The SoM module overlays numbered labels on interactive elements in the screenshot before sending it to the LLM. This gives the LLM a visual "index" to reference when deciding which element to click.
+The SoM module overlays numbered labels on interactive elements in the screenshot
+before sending it to the LLM. This gives the LLM a visual "index" to reference
+when deciding which element to click.
 
 SoM 模块在截图上为交互元素标注编号标签，让 LLM 在决策时有视觉参照。
 
@@ -253,12 +265,17 @@ annotated_image = annotator.annotate(screenshot, interactive_elements)
 
 ### 2. Florence-2 Vision Backend
 
-[Florence-2](https://huggingface.co/microsoft/Florence-2-large) (Microsoft) is a unified vision foundation model. We use two key capabilities:
+[Florence-2](https://huggingface.co/microsoft/Florence-2-large) (Microsoft)
+is a unified vision foundation model. We use two key capabilities:
 
-- **`OCR_WITH_REGION`** — Extracts text with bounding box coordinates from screenshots. Critical for reading text rendered in Canvas, SVG, or custom fonts that DOM cannot access.
-- **`DENSE_REGION_CAPTION`** — Generates descriptions for all detected regions. Identifies icons, colors, shapes — exactly what DOM-only agents miss.
+- **`OCR_WITH_REGION`** — Extracts text with bounding box coordinates from
+  screenshots. Critical for reading text rendered in Canvas, SVG, or custom
+  fonts that DOM cannot access.
+- **`DENSE_REGION_CAPTION`** — Generates descriptions for all detected regions.
+  Identifies icons, colors, shapes — exactly what DOM-only agents miss.
 
-Florence-2（微软）是统一视觉基础模型。我们用 OCR_WITH_REGION 提取渲染文本坐标，用 DENSE_REGION_CAPTION 识别图标、颜色、形状。
+Florence-2（微软）是统一视觉基础模型。我们用 OCR_WITH_REGION 提取渲染文本坐标，
+用 DENSE_REGION_CAPTION 识别图标、颜色、形状。
 
 ### 3. Adaptive Vision Strategy
 
@@ -299,7 +316,9 @@ class VisionEnhancedAgent(Agent):
 
 ### Real-World Benchmark (11 tasks, Baseline vs Vision-Enhanced)
 
-Validated on real-world web tasks across 3 difficulty categories. Each task runs with both baseline (DOM-only) and vision-enhanced agents under identical conditions (gpt-4o-mini, headless Chromium, max 8 steps).
+Validated on real-world web tasks across 3 difficulty categories.
+Each task runs with both baseline (DOM-only) and vision-enhanced agents
+under identical conditions (gpt-4o-mini, headless Chromium, max 8 steps).
 
 | Task | Category | Baseline | Vision | Winner |
 |------|----------|----------|--------|--------|
@@ -317,13 +336,19 @@ Validated on real-world web tasks across 3 difficulty categories. Each task runs
 
 **Success Rate: Baseline 8/11 (72%) → Vision 10/11 (90%)**
 
-> **Note:** This is a real-world-style benchmark snapshot, not a formal WebArena/Mind2Web-scale evaluation. Results may vary across runs due to LLM non-determinism and network conditions. Raw data: [`output/benchmark_results/real_world_11_tasks.json`](output/benchmark_results/real_world_11_tasks.json)
+> **Note:** This is a real-world-style benchmark snapshot, not a formal
+> WebArena/Mind2Web-scale evaluation. Results may vary across runs due to
+> LLM non-determinism and network conditions.
+> Raw data: [`output/benchmark_results/real_world_11_tasks.json`](output/benchmark_results/real_world_11_tasks.json)
 
 Key observations:
 - Vision wins **5 tasks**, baseline wins 2, ties 4
-- On icon-heavy / visually complex pages, baseline fails while vision succeeds (color_picker, arxiv_search, dashboard_chart_tab)
-- On DOM-rich sites (GitHub, HN, Wikipedia), adaptive strategy skips vision → zero GPU overhead
-- One honest loss: toolbar_eraser (vision timeout due to complex SVG DOM), showing the approach isn't universally superior
+- On icon-heavy / visually complex pages, baseline fails while vision succeeds
+  (color_picker, arxiv_search, dashboard_chart_tab)
+- On DOM-rich sites (GitHub, HN, Wikipedia), adaptive strategy skips vision
+  → zero GPU overhead
+- One honest loss: toolbar_eraser (vision timeout due to complex SVG DOM),
+  showing the approach isn't universally superior
 
 ### Latency
 
@@ -383,13 +408,23 @@ MIT License. See [LICENSE](LICENSE) for details.
 
 > **For Recruiters & Hiring Managers:**
 >
-> This project demonstrates end-to-end engineering skills in building a **production-grade ML-powered browser agent enhancement**:
+> This project demonstrates end-to-end engineering skills in building a
+> **production-grade ML-powered browser agent enhancement**:
 >
-> - **Systems Design** — Architected a modular, non-invasive plugin for a popular open-source framework (94k ⭐), using clean class inheritance — zero upstream modifications
-> - **ML Engineering** — Deployed Florence-2 vision foundation model as a GPU inference service; designed SoM (Set-of-Mark) annotation pipeline for visual grounding
-> - **Performance Optimization** — Adaptive inference strategy reduces vision model calls by 50% through rule-based DOM confidence scoring
-> - **Quantitative Results** — Vision-enhanced agent solves icon-only tasks in 2 steps (vs. 29+ step timeout for baseline); 3/3 E2E scenarios pass with 100% first-attempt success
-> - **Software Engineering** — 1,800-line core module, 72 unit tests, 3 E2E integration tests, CI pipeline, typed Python codebase
+> - **Systems Design** — Architected a modular, non-invasive plugin for a
+>   popular open-source framework (94k ⭐), using clean class inheritance
+>   — zero upstream modifications
+> - **ML Engineering** — Deployed Florence-2 vision foundation model as a
+>   GPU inference service; designed SoM (Set-of-Mark) annotation pipeline
+>   for visual grounding
+> - **Performance Optimization** — Adaptive inference strategy reduces vision
+>   model calls by 50% through rule-based DOM confidence scoring
+> - **Quantitative Results** — Evaluated on 11 real-world browser tasks:
+>   vision-enhanced agent achieves 90% success (10/11) vs. baseline 72%
+>   (8/11). Wins 5 tasks, loses 2, ties 4. Includes 72 unit tests + 3 E2E
+>   integration scenarios (all passing)
+> - **Software Engineering** — 1,800-line core module, 72 unit tests,
+>   3 E2E integration tests, CI pipeline, typed Python codebase
 >
 > ---
 >
@@ -398,7 +433,12 @@ MIT License. See [LICENSE](LICENSE) for details.
 > 本项目展示了构建**生产级 ML 浏览器 Agent 增强系统**的全栈工程能力：
 >
 > - **系统设计** — 为热门开源框架（94k ⭐）设计无侵入插件架构，零上游修改
-> - **ML 工程** — 部署 Florence-2 视觉基础模型为 GPU 推理服务；设计 SoM 标注管线实现视觉定位
-> - **性能优化** — 自适应推理策略通过 DOM 置信度评估将视觉模型调用减少 50%
-> - **量化结果** — 视觉增强 Agent 在纯图标任务中 2 步完成（基线 29+ 步超时）；3/3 端到端场景通过，100% 首次成功率
-> - **工程规范** — 1800 行核心模块、72 单元测试、3 个 E2E 集成测试、CI 流水线、类型化 Python 代码
+> - **ML 工程** — 部署 Florence-2 视觉基础模型为 GPU 推理服务；
+>   设计 SoM 标注管线实现视觉定位
+> - **性能优化** — 自适应推理策略通过 DOM 置信度评估将视觉模型调用
+>   减少 50%
+> - **量化结果** — 11 个真实浏览器任务评测：视觉增强 Agent 成功率
+>   90%（10/11）vs 基线 72%（8/11）。赢 5 场、输 2 场、平 4 场。
+>   含 72 单元测试 + 3 个 E2E 集成场景（全部通过）
+> - **工程规范** — 1800 行核心模块、72 单元测试、3 个 E2E 集成测试、
+>   CI 流水线、类型化 Python 代码
