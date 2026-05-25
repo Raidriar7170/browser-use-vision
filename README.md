@@ -126,8 +126,11 @@ browser-use-vision/
 │   └── ...                         # Additional test pages
 │
 ├── output/                         # Test results & reports
-│   ├── demo_results/               # Baseline vs Vision comparison report
-│   └── e2e_results/                # E2E test results + HTML report
+│   ├── benchmark_results/          # ★ Primary evidence
+│   │   ├── real_world_11_tasks.json  # Machine-readable benchmark (11 tasks)
+│   │   └── real_world_11_tasks.md    # Human-readable report
+│   ├── demo_results/               # Early-stage demo artifacts (single-task)
+│   └── e2e_results/                # E2E integration test results
 │
 ├── .github/workflows/tests.yml     # CI: lint + unit tests
 ├── pyproject.toml                  # Project config & dependencies
