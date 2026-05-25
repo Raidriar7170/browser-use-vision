@@ -81,10 +81,11 @@ models/
 # =========================
 # Data / Output
 # =========================
-data/
+# Data / Output
 output/
 !output/e2e_results/
 !output/demo_results/
+!output/benchmark_results/
 screenshots/
 recordings/
 

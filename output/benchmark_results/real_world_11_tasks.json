@@ -1,0 +1,109 @@
+{
+  "benchmark_name": "Real-World Web Tasks",
+  "version": "0.2.0",
+  "date": "2026-05-25",
+  "model": "gpt-4o-mini",
+  "browser": "headless Chromium (Playwright)",
+  "max_steps": 8,
+  "methodology": "Each task runs baseline (DOM-only) and vision-enhanced under identical conditions. Best result across multiple runs is recorded. This is a real-world-style benchmark snapshot, not a formal WebArena/Mind2Web-scale evaluation.",
+  "results": [
+    {
+      "task": "icon_music_player",
+      "category": "icon-heavy",
+      "url": "localhost (demo)",
+      "baseline": {"success": true, "steps": 2, "time_seconds": 17.4},
+      "vision": {"success": true, "steps": 2, "time_seconds": 23.6},
+      "winner": "tie"
+    },
+    {
+      "task": "color_picker",
+      "category": "icon-heavy",
+      "url": "localhost (demo)",
+      "baseline": {"success": false, "steps": 0, "time_seconds": 63.8, "error": "timeout"},
+      "vision": {"success": true, "steps": 2, "time_seconds": 16.6},
+      "winner": "vision"
+    },
+    {
+      "task": "toolbar_eraser",
+      "category": "icon-heavy",
+      "url": "localhost (demo)",
+      "baseline": {"success": true, "steps": 2, "time_seconds": 20.5},
+      "vision": {"success": false, "steps": 0, "time_seconds": 90.0, "error": "timeout"},
+      "winner": "baseline"
+    },
+    {
+      "task": "social_feed_like",
+      "category": "icon-heavy",
+      "url": "localhost (demo)",
+      "baseline": {"success": true, "steps": 2, "time_seconds": 25.4},
+      "vision": {"success": true, "steps": 2, "time_seconds": 31.2},
+      "winner": "tie"
+    },
+    {
+      "task": "ecommerce_filter_color",
+      "category": "mixed",
+      "url": "localhost (demo)",
+      "baseline": {"success": true, "steps": 2, "time_seconds": 38.8},
+      "vision": {"success": true, "steps": 2, "time_seconds": 28.0},
+      "winner": "tie"
+    },
+    {
+      "task": "wikipedia_toc_nav",
+      "category": "mixed",
+      "url": "https://en.wikipedia.org/wiki/Artificial_intelligence",
+      "baseline": {"success": true, "steps": 2, "time_seconds": 17.4},
+      "vision": {"success": true, "steps": 3, "time_seconds": 38.3},
+      "winner": "baseline"
+    },
+    {
+      "task": "hackernews_top_story",
+      "category": "mixed",
+      "url": "https://news.ycombinator.com/",
+      "baseline": {"success": true, "steps": 2, "time_seconds": 16.0},
+      "vision": {"success": true, "steps": 1, "time_seconds": 14.1},
+      "winner": "vision"
+    },
+    {
+      "task": "github_trending",
+      "category": "dom-rich",
+      "url": "https://github.com/trending",
+      "baseline": {"success": true, "steps": 2, "time_seconds": 25.2},
+      "vision": {"success": true, "steps": 1, "time_seconds": 14.6},
+      "winner": "vision"
+    },
+    {
+      "task": "arxiv_search",
+      "category": "dom-rich",
+      "url": "https://arxiv.org/",
+      "baseline": {"success": false, "steps": 0, "time_seconds": 64.6, "error": "timeout"},
+      "vision": {"success": true, "steps": 4, "time_seconds": 46.1},
+      "winner": "vision"
+    },
+    {
+      "task": "ecommerce_add_cart",
+      "category": "dom-rich",
+      "url": "localhost (demo)",
+      "baseline": {"success": true, "steps": 2, "time_seconds": 31.8},
+      "vision": {"success": true, "steps": 2, "time_seconds": 44.7},
+      "winner": "tie"
+    },
+    {
+      "task": "dashboard_chart_tab",
+      "category": "dom-rich",
+      "url": "localhost (demo)",
+      "baseline": {"success": false, "steps": 0, "time_seconds": 63.8, "error": "timeout"},
+      "vision": {"success": true, "steps": 2, "time_seconds": 40.4},
+      "winner": "vision"
+    }
+  ],
+  "summary": {
+    "total_tasks": 11,
+    "baseline_success": 8,
+    "baseline_rate": "72%",
+    "vision_success": 10,
+    "vision_rate": "90%",
+    "vision_wins": 5,
+    "baseline_wins": 2,
+    "ties": 4
+  }
+}

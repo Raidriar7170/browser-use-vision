@@ -314,6 +314,8 @@ Validated on real-world web tasks across 3 difficulty categories. Each task runs
 
 **Success Rate: Baseline 8/11 (72%) → Vision 10/11 (90%)**
 
+> **Note:** This is a real-world-style benchmark snapshot, not a formal WebArena/Mind2Web-scale evaluation. Results may vary across runs due to LLM non-determinism and network conditions. Raw data: [`output/benchmark_results/real_world_11_tasks.json`](output/benchmark_results/real_world_11_tasks.json)
+
 Key observations:
 - Vision wins **5 tasks**, baseline wins 2, ties 4
 - On icon-heavy / visually complex pages, baseline fails while vision succeeds (color_picker, arxiv_search, dashboard_chart_tab)
