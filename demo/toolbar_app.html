@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Toolbar Demo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #1e1e1e; color: #fff; display: flex; flex-direction: column; align-items: center; padding: 40px; }
+        h1 { margin-bottom: 20px; font-size: 18px; color: #aaa; }
+        .toolbar { display: flex; gap: 2px; background: #2d2d2d; border-radius: 8px; padding: 4px; }
+        .tool-btn { width: 36px; height: 36px; border: none; background: transparent; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+        .tool-btn:hover { background: #3d3d3d; }
+        .tool-btn.active { background: #0066ff; }
+        .tool-btn svg { width: 20px; height: 20px; fill: #ccc; }
+        .tool-btn.active svg { fill: #fff; }
+        .canvas-area { margin-top: 30px; width: 500px; height: 300px; background: #fff; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #333; font-size: 14px; }
+        #status { margin-top: 15px; color: #4caf50; font-size: 14px; min-height: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Drawing Application</h1>
+    <div class="toolbar">
+        <button class="tool-btn active" data-tool="select" onclick="selectTool(this)">
+            <svg viewBox="0 0 24 24"><path d="M7 2l10 10-4 1 3 7-2 1-3-7-4 4z"/></svg>
+        </button>
+        <button class="tool-btn" data-tool="pen" onclick="selectTool(this)">
+            <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+        </button>
+        <button class="tool-btn" data-tool="brush" onclick="selectTool(this)">
+            <svg viewBox="0 0 24 24"><path d="M7 14c-1.66 0-3 1.34-3 3 0 1.31-1.16 2-2 2 .92 1.22 2.49 2 4 2 2.21 0 4-1.79 4-4 0-1.66-1.34-3-3-3zm13.71-9.37l-1.34-1.34a1 1 0 00-1.41 0L9 12.25 11.75 15l8.96-8.96a1 1 0 000-1.41z"/></svg>
+        </button>
+        <button class="tool-btn" data-tool="eraser" onclick="selectTool(this)">
+            <svg viewBox="0 0 24 24"><path d="M16.24 3.56l4.95 4.94c.78.79.78 2.05 0 2.84L12 20.53a4 4 0 01-5.66 0L2.81 17a2 2 0 010-2.83l8.49-8.49a2 2 0 012.83 0l2.11 2.11zM4.22 15.58l3.54 3.53c.78.78 2.05.78 2.83 0l3.53-3.53-4.95-4.95-4.95 4.95z"/></svg>
+        </button>
+        <button class="tool-btn" data-tool="text" onclick="selectTool(this)">
+            <svg viewBox="0 0 24 24"><path d="M5 4v3h5.5v12h3V7H19V4z"/></svg>
+        </button>
+        <button class="tool-btn" data-tool="shapes" onclick="selectTool(this)">
+            <svg viewBox="0 0 24 24"><path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm13 0l4 8H12l4-8z"/></svg>
+        </button>
+        <button class="tool-btn" data-tool="fill" onclick="selectTool(this)">
+            <svg viewBox="0 0 24 24"><path d="M16.56 8.94L7.62 0 6.21 1.41l2.38 2.38-5.15 5.15a2 2 0 000 2.83l5.66 5.66a2 2 0 002.83 0l5.63-5.63a2 2 0 000-2.83zM5.91 10L10 5.91 14.09 10H5.91zM19 11.5c0 1.38 1.12 2.5 2.5 2.5S22 12.88 22 11.5 20.5 8 20.5 8 19 10.12 19 11.5z"/></svg>
+        </button>
+        <button class="tool-btn" data-tool="zoom" onclick="selectTool(this)">
+            <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+        </button>
+    </div>
+    <div class="canvas-area">Canvas Area — Select a tool to begin drawing</div>
+    <div id="status"></div>
+    <script>
+        function selectTool(btn) {
+            document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('status').textContent = 'Selected tool: ' + btn.dataset.tool;
+        }
+    </script>
+</body>
+</html>

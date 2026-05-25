@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Social Feed</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #fafafa; color: #262626; max-width: 470px; margin: 0 auto; padding: 20px 0; }
+        .post { background: #fff; border: 1px solid #dbdbdb; border-radius: 8px; margin-bottom: 16px; }
+        .post-header { display: flex; align-items: center; padding: 12px 16px; gap: 10px; }
+        .avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
+        .username { font-weight: 600; font-size: 14px; }
+        .post-image { width: 100%; height: 300px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; }
+        .post-actions { display: flex; padding: 12px 16px; gap: 16px; }
+        .action-btn { background: none; border: none; cursor: pointer; padding: 0; display: flex; align-items: center; }
+        .action-btn svg { width: 24px; height: 24px; fill: #262626; }
+        .action-btn:hover svg { fill: #8e8e8e; }
+        .action-btn.liked svg { fill: #ed4956; }
+        .spacer { flex: 1; }
+        .likes { padding: 0 16px; font-weight: 600; font-size: 14px; }
+        .caption { padding: 6px 16px 12px; font-size: 14px; line-height: 1.4; }
+        .caption strong { font-weight: 600; }
+        #status { text-align: center; color: #22c55e; padding: 10px; font-size: 14px; min-height: 34px; }
+    </style>
+</head>
+<body>
+    <div class="post">
+        <div class="post-header">
+            <div class="avatar"></div>
+            <span class="username">photographer_jane</span>
+        </div>
+        <div class="post-image">📸 Mountain Sunset</div>
+        <div class="post-actions">
+            <button class="action-btn" data-action="like" onclick="toggleLike(this)">
+                <svg viewBox="0 0 24 24"><path d="M16.792 3.904A4.989 4.989 0 0121.5 9.122c0 3.072-2.652 4.959-5.197 7.222-2.512 2.243-3.865 3.469-4.303 3.752-.477-.309-2.143-1.823-4.303-3.752C5.141 14.072 2.5 12.167 2.5 9.122a4.989 4.989 0 014.708-5.218 4.21 4.21 0 013.675 1.941c.84 1.175.98 1.763 1.12 1.763s.278-.588 1.11-1.766a4.17 4.17 0 013.679-1.938z"/></svg>
+            </button>
+            <button class="action-btn" data-action="comment" onclick="doAction('comment')">
+                <svg viewBox="0 0 24 24"><path d="M20.656 17.008a9.993 9.993 0 10-3.59 3.615L22 22z" fill="none" stroke="#262626" stroke-width="2" stroke-linejoin="round"/></svg>
+            </button>
+            <button class="action-btn" data-action="share" onclick="doAction('share')">
+                <svg viewBox="0 0 24 24"><path d="M22 3L9.218 10.083M11.698 20.334L22 3.001H2l9.218 7.083m.48 10.25v-5.668l5.293 5.668" fill="none" stroke="#262626" stroke-width="2" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="spacer"></div>
+            <button class="action-btn" data-action="bookmark" onclick="doAction('bookmark')">
+                <svg viewBox="0 0 24 24"><path d="M20 21l-8-5.333L4 21V5a2 2 0 012-2h12a2 2 0 012 2z" fill="none" stroke="#262626" stroke-width="2" stroke-linejoin="round"/></svg>
+            </button>
+        </div>
+        <div class="likes">1,234 likes</div>
+        <div class="caption"><strong>photographer_jane</strong> Beautiful sunset over the mountains 🌄 #nature #photography</div>
+    </div>
+    <div class="post">
+        <div class="post-header">
+            <div class="avatar" style="background: linear-gradient(45deg, #4facfe, #00f2fe);"></div>
+            <span class="username">travel_mike</span>
+        </div>
+        <div class="post-image" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">🏝️ Tropical Beach</div>
+        <div class="post-actions">
+            <button class="action-btn" data-action="like" onclick="toggleLike(this)">
+                <svg viewBox="0 0 24 24"><path d="M16.792 3.904A4.989 4.989 0 0121.5 9.122c0 3.072-2.652 4.959-5.197 7.222-2.512 2.243-3.865 3.469-4.303 3.752-.477-.309-2.143-1.823-4.303-3.752C5.141 14.072 2.5 12.167 2.5 9.122a4.989 4.989 0 014.708-5.218 4.21 4.21 0 013.675 1.941c.84 1.175.98 1.763 1.12 1.763s.278-.588 1.11-1.766a4.17 4.17 0 013.679-1.938z"/></svg>
+            </button>
+            <button class="action-btn" data-action="comment" onclick="doAction('comment')">
+                <svg viewBox="0 0 24 24"><path d="M20.656 17.008a9.993 9.993 0 10-3.59 3.615L22 22z" fill="none" stroke="#262626" stroke-width="2" stroke-linejoin="round"/></svg>
+            </button>
+            <button class="action-btn" data-action="share" onclick="doAction('share')">
+                <svg viewBox="0 0 24 24"><path d="M22 3L9.218 10.083M11.698 20.334L22 3.001H2l9.218 7.083m.48 10.25v-5.668l5.293 5.668" fill="none" stroke="#262626" stroke-width="2" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="spacer"></div>
+            <button class="action-btn" data-action="bookmark" onclick="doAction('bookmark')">
+                <svg viewBox="0 0 24 24"><path d="M20 21l-8-5.333L4 21V5a2 2 0 012-2h12a2 2 0 012 2z" fill="none" stroke="#262626" stroke-width="2" stroke-linejoin="round"/></svg>
+            </button>
+        </div>
+        <div class="likes">892 likes</div>
+        <div class="caption"><strong>travel_mike</strong> Paradise found 🌴 #travel #beach</div>
+    </div>
+    <div id="status"></div>
+    <script>
+        function toggleLike(btn) {
+            btn.classList.toggle('liked');
+            document.getElementById('status').textContent = btn.classList.contains('liked') ? 'Liked!' : 'Unliked';
+        }
+        function doAction(action) {
+            document.getElementById('status').textContent = 'Action: ' + action;
+        }
+    </script>
+</body>
+</html>

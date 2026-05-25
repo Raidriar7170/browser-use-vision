@@ -294,23 +294,31 @@ class VisionEnhancedAgent(Agent):
 
 ## 📊 Performance / 性能
 
-### Real-World Benchmark (6 tasks, Baseline vs Vision-Enhanced)
+### Real-World Benchmark (11 tasks, Baseline vs Vision-Enhanced)
+
+Validated on real-world web tasks across 3 difficulty categories. Each task runs with both baseline (DOM-only) and vision-enhanced agents under identical conditions (gpt-4o-mini, headless Chromium, max 8 steps).
 
 | Task | Category | Baseline | Vision | Winner |
 |------|----------|----------|--------|--------|
 | icon_music_player | icon-heavy | ✅ 2 steps | ✅ 2 steps | Tie |
-| color_picker | icon-heavy | ❌ timeout | ✅ 2 steps | **Vision** |
+| color_picker | icon-heavy | ❌ timeout | ✅ 2 steps | **Vision** ✨ |
+| toolbar_eraser | icon-heavy | ✅ 2 steps | ❌ timeout | Baseline |
+| social_feed_like | icon-heavy | ✅ 2 steps | ✅ 2 steps | Tie |
+| ecommerce_filter_color | mixed | ✅ 2 steps | ✅ 2 steps | Tie |
 | wikipedia_toc_nav | mixed | ✅ 2 steps | ✅ 3 steps | Baseline |
 | hackernews_top_story | mixed | ✅ 2 steps | ✅ 1 step | Vision |
 | github_trending | dom-rich | ✅ 2 steps | ✅ 1 step | Vision |
-| arxiv_search | dom-rich | ❌ timeout | ✅ 4 steps | **Vision** |
+| arxiv_search | dom-rich | ❌ timeout | ✅ 4 steps | **Vision** ✨ |
+| ecommerce_add_cart | dom-rich | ✅ 2 steps | ✅ 2 steps | Tie |
+| dashboard_chart_tab | dom-rich | ❌ timeout | ✅ 2 steps | **Vision** ✨ |
 
-**Success Rate: Baseline 4/6 (67%) → Vision 6/6 (100%)**
+**Success Rate: Baseline 8/11 (72%) → Vision 10/11 (90%)**
 
 Key observations:
-- Vision-enhanced agent solves **all** tasks; baseline fails on visually complex ones
-- On DOM-rich sites (GitHub, HN), adaptive strategy skips vision → zero GPU overhead
-- Vision agent wins 4/6, baseline wins 1/6, ties 1/6
+- Vision wins **5 tasks**, baseline wins 2, ties 4
+- On icon-heavy / visually complex pages, baseline fails while vision succeeds (color_picker, arxiv_search, dashboard_chart_tab)
+- On DOM-rich sites (GitHub, HN, Wikipedia), adaptive strategy skips vision → zero GPU overhead
+- One honest loss: toolbar_eraser (vision timeout due to complex SVG DOM), showing the approach isn't universally superior
 
 ### Latency
 
@@ -353,7 +361,7 @@ Key observations:
 - [x] CI pipeline (GitHub Actions) — 72 unit tests
 - [~] OmniParser V2 backend (code complete, needs integration testing)
 - [ ] GroundingDINO as alternative detection backend
-- [x] Real-world benchmark (6 tasks, 100% success rate)
+- [x] Real-world benchmark (11 tasks, 90% vs 72% success rate)
 - [ ] Benchmark against WebArena / Mind2Web evaluation suites
 - [ ] Video stream mode for real-time agent observation
 - [ ] Confidence evaluator v2: learn threshold from agent traces

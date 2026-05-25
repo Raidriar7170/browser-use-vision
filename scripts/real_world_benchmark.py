@@ -40,14 +40,16 @@ if env_file.exists():
             k, v = line.strip().split("=", 1)
             os.environ.setdefault(k, v)
 
-# 清除代理
-for var in ["HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY",
-            "http_proxy", "https_proxy", "all_proxy",
-            "SOCKS_PROXY", "socks_proxy"]:
+# 代理策略: 保留 HTTP(S)_PROXY 给 LLM API 用，NO_PROXY 排除 CDP localhost
+# 这样 LLM API 走代理（稳定），CDP 连接不走代理（不干扰）
+for var in ["ALL_PROXY", "all_proxy", "SOCKS_PROXY", "socks_proxy"]:
     os.environ.pop(var, None)
-os.environ["NO_PROXY"] = "*"
-os.environ["no_proxy"] = "*"
-os.environ["ALL_PROXY"] = ""
+os.environ["HTTP_PROXY"] = "http://127.0.0.1:1097"
+os.environ["HTTPS_PROXY"] = "http://127.0.0.1:1097"
+os.environ["http_proxy"] = "http://127.0.0.1:1097"
+os.environ["https_proxy"] = "http://127.0.0.1:1097"
+os.environ["NO_PROXY"] = "localhost,127.0.0.1,0.0.0.0"
+os.environ["no_proxy"] = "localhost,127.0.0.1,0.0.0.0"
 urllib.request.getproxies = lambda: {}
 
 
@@ -81,8 +83,36 @@ TASKS = [
         category="icon-heavy",
         success_keywords=["green", "apply", "click", "success"],
     ),
+    BenchmarkTask(
+        name="toolbar_eraser",
+        url="http://localhost:8088/toolbar_app.html",
+        task="Click the eraser tool in the drawing toolbar. The tools are icon-only SVG buttons with no text labels. After clicking, call done and report which tool you selected.",
+        category="icon-heavy",
+        success_keywords=["eraser", "selected", "success"],
+    ),
+    BenchmarkTask(
+        name="social_feed_like",
+        url="http://localhost:8088/social_feed.html",
+        task="Click the heart/like button on the first post (by photographer_jane). The action buttons are icon-only. After clicking, call done.",
+        category="icon-heavy",
+        success_keywords=["like", "heart", "click", "success"],
+    ),
 
     # ── 混合型 (mixed): 有文字也有图标 ──
+    BenchmarkTask(
+        name="dashboard_settings",
+        url="http://localhost:8088/dashboard.html",
+        task="Click the settings icon button in the top-right header area of the dashboard. After clicking, call done and report what happened.",
+        category="mixed",
+        success_keywords=["settings", "action", "click", "success"],
+    ),
+    BenchmarkTask(
+        name="ecommerce_filter_color",
+        url="http://localhost:8088/ecommerce.html",
+        task="In the sneaker store, click the blue color swatch in the Color filter section on the left sidebar. After selecting, call done.",
+        category="mixed",
+        success_keywords=["blue", "color", "select", "success"],
+    ),
     BenchmarkTask(
         name="wikipedia_toc_nav",
         url="https://en.wikipedia.org/wiki/Artificial_intelligence",
@@ -112,6 +142,20 @@ TASKS = [
         task="Type 'vision language model' in the search box on arxiv.org and submit the search. After the search results appear, report the title of the first result. Call done with your findings.",
         category="dom-rich",
         success_keywords=["success"],
+    ),
+    BenchmarkTask(
+        name="ecommerce_add_cart",
+        url="http://localhost:8088/ecommerce.html",
+        task="Add the 'Urban Glide X' sneaker to the cart by clicking its 'Add to Cart' button. After clicking, call done.",
+        category="dom-rich",
+        success_keywords=["cart", "urban", "glide", "success"],
+    ),
+    BenchmarkTask(
+        name="dashboard_chart_tab",
+        url="http://localhost:8088/dashboard.html",
+        task="Switch the chart view to 'Monthly' by clicking the Monthly tab in the Revenue Overview section. After clicking, call done.",
+        category="dom-rich",
+        success_keywords=["monthly", "switch", "success"],
     ),
 ]
 
@@ -187,8 +231,8 @@ async def run_task(task: BenchmarkTask, use_vision: bool) -> TaskResult:
         await page.goto(task.url)
         await asyncio.sleep(3)  # 等页面加载稳定
 
-        # 加硬超时保护（60秒），防止 Agent 无限循环
-        history = await asyncio.wait_for(agent.run(), timeout=60)
+        # 加硬超时保护（120秒），防止 Agent 无限循环
+        history = await asyncio.wait_for(agent.run(), timeout=120)
         result_text = history.final_result() or ""
         steps = history.number_of_steps()
 
@@ -200,7 +244,7 @@ async def run_task(task: BenchmarkTask, use_vision: bool) -> TaskResult:
         success = history.is_done() and steps < task.max_steps
 
     except asyncio.TimeoutError:
-        error_msg = "Timeout (60s)"
+        error_msg = "Timeout (120s)"
     except Exception as e:
         error_msg = str(e)[:200]
 
