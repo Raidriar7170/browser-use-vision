@@ -367,7 +367,7 @@ async def main():
 
     report_data = {
         "benchmark_name": "Ablation Study",
-        "version": "0.3.0",
+        "version": "0.4.0",
         "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         "model": model,
         "vision_backend": "Florence-2 (localhost:8100)",

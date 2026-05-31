@@ -1,0 +1,1140 @@
+{
+  "benchmark_name": "Ablation Study",
+  "version": "0.4.0",
+  "date": "2026-05-31",
+  "model": "gpt-4o",
+  "vision_backend": "Florence-2 (localhost:8100)",
+  "success_criterion": "objective verification (DOM / URL / live API)",
+  "conditions": {
+    "A_baseline": {
+      "description": "Pure DOM agent, no vision backend, no SoM annotation"
+    },
+    "B_som_only": {
+      "description": "SoM screenshot annotation only, no vision backend"
+    },
+    "C_full_always": {
+      "description": "Vision always FULL (OCR + Region Caption every step), no adaptive skip"
+    },
+    "D_ocr_only": {
+      "description": "Vision OCR only (no Region Caption), every step"
+    },
+    "E_adaptive_full": {
+      "description": "Adaptive vision (SKIP/LIGHTWEIGHT/FULL based on DOM confidence) — default config"
+    },
+    "F_adaptive_no_som": {
+      "description": "Adaptive vision without SoM annotation"
+    }
+  },
+  "results": [
+    {
+      "task": "icon_music_player",
+      "category": "icon-heavy",
+      "conditions": {
+        "A_baseline": {
+          "success": false,
+          "steps": 29,
+          "time_seconds": 204.0,
+          "vision_calls": 0,
+          "verify_detail": "",
+          "is_done": false,
+          "error": "Timeout (200s)"
+        },
+        "B_som_only": {
+          "success": false,
+          "steps": 28,
+          "time_seconds": 203.7,
+          "vision_calls": 0,
+          "verify_detail": "",
+          "is_done": false,
+          "error": "Timeout (200s)"
+        },
+        "C_full_always": {
+          "success": true,
+          "steps": 8,
+          "time_seconds": 82.0,
+          "vision_calls": 8,
+          "verify_detail": "dom_js(document.getElementById('result') && document.getElementById('result').textContent.toLowerCase().includes('next')) -> 'True'",
+          "is_done": true,
+          "error": null
+        },
+        "D_ocr_only": {
+          "success": false,
+          "steps": 5,
+          "time_seconds": 47.4,
+          "vision_calls": 5,
+          "verify_detail": "dom_js(document.getElementById('result') && document.getElementById('result').textContent.toLowerCase().includes('next')) -> 'False'",
+          "is_done": true,
+          "error": null
+        },
+        "E_adaptive_full": {
+          "success": false,
+          "steps": 23,
+          "time_seconds": 203.7,
+          "vision_calls": 0,
+          "verify_detail": "",
+          "is_done": false,
+          "error": "Timeout (200s)"
+        },
+        "F_adaptive_no_som": {
+          "success": false,
+          "steps": 26,
+          "time_seconds": 203.7,
+          "vision_calls": 0,
+          "verify_detail": "",
+          "is_done": false,
+          "error": "Timeout (200s)"
+        }
+      }
+    },
+    {
+      "task": "color_picker",
+      "category": "icon-heavy",
+      "conditions": {
+        "A_baseline": {
+          "success": false,
+          "steps": 5,
+          "time_seconds": 26.2,
+          "vision_calls": 0,
+          "verify_detail": "dom_js(document.querySelector('.color-swatch.selected') && document.querySelector('.color-swatch.selected').dataset.color==='green' && Array.isArray(window.actions) && window.actions.includes('apply')) -> 'False'",
+          "is_done": true,
+          "error": null
+        },
+        "B_som_only": {
+          "success": false,
+          "steps": 5,
+          "time_seconds": 26.5,
+          "vision_calls": 0,
+          "verify_detail": "dom_js(document.querySelector('.color-swatch.selected') && document.querySelector('.color-swatch.selected').dataset.color==='green' && Array.isArray(window.actions) && window.actions.includes('apply')) -> 'False'",
+          "is_done": true,
+          "error": null
+        },
+        "C_full_always": {
+          "success": false,
+          "steps": 25,
+          "time_seconds": 203.7,
+          "vision_calls": 0,
+          "verify_detail": "",
+          "is_done": false,
+          "error": "Timeout (200s)"
+        },
+        "D_ocr_only": {
+          "success": true,
+          "steps": 5,
+          "time_seconds": 46.0,
+          "vision_calls": 5,
+          "verify_detail": "dom_js(document.querySelector('.color-swatch.selected') && document.querySelector('.color-swatch.selected').dataset.color==='green' && Array.isArray(window.actions) && window.actions.includes('apply')) -> 'True'",
+          "is_done": true,
+          "error": null
+        },
+        "E_adaptive_full": {
+          "success": true,
+          "steps": 5,
+          "time_seconds": 117.4,
+          "vision_calls": 5,
+          "verify_detail": "dom_js(document.querySelector('.color-swatch.selected') && document.querySelector('.color-swatch.selected').dataset.color==='green' && Array.isArray(window.actions) && window.actions.includes('apply')) -> 'True'",
+          "is_done": true,
+          "error": null
+        },
+        "F_adaptive_no_som": {
+          "success": false,
+          "steps": 26,
+          "time_seconds": 203.8,
+          "vision_calls": 0,
+          "verify_detail": "",
+          "is_done": false,
+          "error": "Timeout (200s)"
+        }
+      }
+    },
+    {
+      "task": "toolbar_eraser",
+      "category": "icon-heavy",
+      "conditions": {
+        "A_baseline": {
+          "success": false,
+          "steps": 32,
+          "time_seconds": 203.6,
+          "vision_calls": 0,
+          "verify_detail": "",
+          "is_done": false,
+          "error": "Timeout (200s)"
+        },
+        "B_som_only": {
+          "success": false,
+          "steps": 5,
+          "time_seconds": 21.9,
+          "vision_calls": 0,
+          "verify_detail": "dom_js(document.querySelector('.tool-btn.active') && document.querySelector('.tool-btn.active').dataset.tool==='eraser') -> 'False'",
+          "is_done": true,
+          "error": null
+        },
+        "C_full_always": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 18.1,
+          "vision_calls": 2,
+          "verify_detail": "dom_js(document.querySelector('.tool-btn.active') && document.querySelector('.tool-btn.active').dataset.tool==='eraser') -> 'True'",
+          "is_done": true,
+          "error": null
+        },
+        "D_ocr_only": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 16.8,
+          "vision_calls": 2,
+          "verify_detail": "dom_js(document.querySelector('.tool-btn.active') && document.querySelector('.tool-btn.active').dataset.tool==='eraser') -> 'True'",
+          "is_done": true,
+          "error": null
+        },
+        "E_adaptive_full": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 17.6,
+          "vision_calls": 2,
+          "verify_detail": "dom_js(document.querySelector('.tool-btn.active') && document.querySelector('.tool-btn.active').dataset.tool==='eraser') -> 'True'",
+          "is_done": true,
+          "error": null
+        },
+        "F_adaptive_no_som": {
+          "success": true,
+          "steps": 5,
+          "time_seconds": 32.7,
+          "vision_calls": 5,
+          "verify_detail": "dom_js(document.querySelector('.tool-btn.active') && document.querySelector('.tool-btn.active').dataset.tool==='eraser') -> 'True'",
+          "is_done": true,
+          "error": null
+        }
+      }
+    },
+    {
+      "task": "social_feed_like",
+      "category": "icon-heavy",
+      "conditions": {
+        "A_baseline": {
+          "success": false,
+          "steps": 23,
+          "time_seconds": 203.7,
+          "vision_calls": 0,
+          "verify_detail": "",
+          "is_done": false,
+          "error": "Timeout (200s)"
+        },
+        "B_som_only": {
+          "success": true,
+          "steps": 6,
+          "time_seconds": 26.5,
+          "vision_calls": 0,
+          "verify_detail": "dom_js(document.querySelectorAll('.post')[0] && document.querySelectorAll('.post')[0].querySelector('.action-btn.liked')!==null) -> 'True'",
+          "is_done": true,
+          "error": null
+        },
+        "C_full_always": {
+          "success": true,
+          "steps": 6,
+          "time_seconds": 54.4,
+          "vision_calls": 6,
+          "verify_detail": "dom_js(document.querySelectorAll('.post')[0] && document.querySelectorAll('.post')[0].querySelector('.action-btn.liked')!==null) -> 'True'",
+          "is_done": true,
+          "error": null
+        },
+        "D_ocr_only": {
+          "success": true,
+          "steps": 6,
+          "time_seconds": 50.6,
+          "vision_calls": 6,
+          "verify_detail": "dom_js(document.querySelectorAll('.post')[0] && document.querySelectorAll('.post')[0].querySelector('.action-btn.liked')!==null) -> 'True'",
+          "is_done": true,
+          "error": null
+        },
+        "E_adaptive_full": {
+          "success": true,
+          "steps": 10,
+          "time_seconds": 92.8,
+          "vision_calls": 10,
+          "verify_detail": "dom_js(document.querySelectorAll('.post')[0] && document.querySelectorAll('.post')[0].querySelector('.action-btn.liked')!==null) -> 'True'",
+          "is_done": true,
+          "error": null
+        },
+        "F_adaptive_no_som": {
+          "success": true,
+          "steps": 6,
+          "time_seconds": 52.2,
+          "vision_calls": 6,
+          "verify_detail": "dom_js(document.querySelectorAll('.post')[0] && document.querySelectorAll('.post')[0].querySelector('.action-btn.liked')!==null) -> 'True'",
+          "is_done": true,
+          "error": null
+        }
+      }
+    },
+    {
+      "task": "ecommerce_filter_color",
+      "category": "mixed",
+      "conditions": {
+        "A_baseline": {
+          "success": false,
+          "steps": 14,
+          "time_seconds": 203.7,
+          "vision_calls": 0,
+          "verify_detail": "",
+          "is_done": false,
+          "error": "Timeout (200s)"
+        },
+        "B_som_only": {
+          "success": false,
+          "steps": 42,
+          "time_seconds": 204.0,
+          "vision_calls": 0,
+          "verify_detail": "",
+          "is_done": false,
+          "error": "Timeout (200s)"
+        },
+        "C_full_always": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 28.1,
+          "vision_calls": 2,
+          "verify_detail": "dom_js(document.querySelector('.color-swatch.selected') && document.querySelector('.color-swatch.selected').dataset.color==='blue') -> 'True'",
+          "is_done": true,
+          "error": null
+        },
+        "D_ocr_only": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 27.2,
+          "vision_calls": 2,
+          "verify_detail": "dom_js(document.querySelector('.color-swatch.selected') && document.querySelector('.color-swatch.selected').dataset.color==='blue') -> 'True'",
+          "is_done": true,
+          "error": null
+        },
+        "E_adaptive_full": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 26.8,
+          "vision_calls": 2,
+          "verify_detail": "dom_js(document.querySelector('.color-swatch.selected') && document.querySelector('.color-swatch.selected').dataset.color==='blue') -> 'True'",
+          "is_done": true,
+          "error": null
+        },
+        "F_adaptive_no_som": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 25.1,
+          "vision_calls": 2,
+          "verify_detail": "dom_js(document.querySelector('.color-swatch.selected') && document.querySelector('.color-swatch.selected').dataset.color==='blue') -> 'True'",
+          "is_done": true,
+          "error": null
+        }
+      }
+    },
+    {
+      "task": "dashboard_chart_tab",
+      "category": "dom-rich",
+      "conditions": {
+        "A_baseline": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 14.3,
+          "vision_calls": 0,
+          "verify_detail": "dom_js(document.querySelector('.chart-tab.active') && document.querySelector('.chart-tab.active').textContent.trim()==='Monthly') -> 'True'",
+          "is_done": true,
+          "error": null
+        },
+        "B_som_only": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 11.7,
+          "vision_calls": 0,
+          "verify_detail": "dom_js(document.querySelector('.chart-tab.active') && document.querySelector('.chart-tab.active').textContent.trim()==='Monthly') -> 'True'",
+          "is_done": true,
+          "error": null
+        },
+        "C_full_always": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 41.2,
+          "vision_calls": 2,
+          "verify_detail": "dom_js(document.querySelector('.chart-tab.active') && document.querySelector('.chart-tab.active').textContent.trim()==='Monthly') -> 'True'",
+          "is_done": true,
+          "error": null
+        },
+        "D_ocr_only": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 26.3,
+          "vision_calls": 2,
+          "verify_detail": "dom_js(document.querySelector('.chart-tab.active') && document.querySelector('.chart-tab.active').textContent.trim()==='Monthly') -> 'True'",
+          "is_done": true,
+          "error": null
+        },
+        "E_adaptive_full": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 15.5,
+          "vision_calls": 0,
+          "verify_detail": "dom_js(document.querySelector('.chart-tab.active') && document.querySelector('.chart-tab.active').textContent.trim()==='Monthly') -> 'True'",
+          "is_done": true,
+          "error": null
+        },
+        "F_adaptive_no_som": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 14.8,
+          "vision_calls": 0,
+          "verify_detail": "dom_js(document.querySelector('.chart-tab.active') && document.querySelector('.chart-tab.active').textContent.trim()==='Monthly') -> 'True'",
+          "is_done": true,
+          "error": null
+        }
+      }
+    },
+    {
+      "task": "wikipedia_toc_nav",
+      "category": "mixed",
+      "conditions": {
+        "A_baseline": {
+          "success": true,
+          "steps": 5,
+          "time_seconds": 30.1,
+          "vision_calls": 0,
+          "verify_detail": "url='https://en.wikipedia.org/wiki/Machine_learning#Relationships_to_other_fields' expected~['Machine_learning']",
+          "is_done": true,
+          "error": null
+        },
+        "B_som_only": {
+          "success": false,
+          "steps": 42,
+          "time_seconds": 205.5,
+          "vision_calls": 0,
+          "verify_detail": "",
+          "is_done": false,
+          "error": "Timeout (200s)"
+        },
+        "C_full_always": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 32.1,
+          "vision_calls": 2,
+          "verify_detail": "url='https://en.wikipedia.org/wiki/Machine_learning' expected~['Machine_learning']",
+          "is_done": true,
+          "error": null
+        },
+        "D_ocr_only": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 35.6,
+          "vision_calls": 2,
+          "verify_detail": "url='https://en.wikipedia.org/wiki/Machine_learning' expected~['Machine_learning']",
+          "is_done": true,
+          "error": null
+        },
+        "E_adaptive_full": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 20.5,
+          "vision_calls": 0,
+          "verify_detail": "url='https://en.wikipedia.org/wiki/Machine_learning' expected~['Machine_learning']",
+          "is_done": true,
+          "error": null
+        },
+        "F_adaptive_no_som": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 20.1,
+          "vision_calls": 0,
+          "verify_detail": "url='https://en.wikipedia.org/wiki/Machine_learning' expected~['Machine_learning']",
+          "is_done": true,
+          "error": null
+        }
+      }
+    },
+    {
+      "task": "wikipedia_search",
+      "category": "mixed",
+      "conditions": {
+        "A_baseline": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 16.6,
+          "vision_calls": 0,
+          "verify_detail": "url='https://en.wikipedia.org/wiki/Alan_Turing' expected~['Alan_Turing']",
+          "is_done": true,
+          "error": null
+        },
+        "B_som_only": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 16.5,
+          "vision_calls": 0,
+          "verify_detail": "url='https://en.wikipedia.org/wiki/Alan_Turing' expected~['Alan_Turing']",
+          "is_done": true,
+          "error": null
+        },
+        "C_full_always": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 35.5,
+          "vision_calls": 2,
+          "verify_detail": "url='https://en.wikipedia.org/wiki/Alan_Turing' expected~['Alan_Turing']",
+          "is_done": true,
+          "error": null
+        },
+        "D_ocr_only": {
+          "success": true,
+          "steps": 3,
+          "time_seconds": 46.4,
+          "vision_calls": 3,
+          "verify_detail": "url='https://en.wikipedia.org/wiki/Alan_Turing' expected~['Alan_Turing']",
+          "is_done": true,
+          "error": null
+        },
+        "E_adaptive_full": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 21.4,
+          "vision_calls": 0,
+          "verify_detail": "url='https://en.wikipedia.org/wiki/Alan_Turing' expected~['Alan_Turing']",
+          "is_done": true,
+          "error": null
+        },
+        "F_adaptive_no_som": {
+          "success": true,
+          "steps": 3,
+          "time_seconds": 26.4,
+          "vision_calls": 0,
+          "verify_detail": "url='https://en.wikipedia.org/wiki/Alan_Turing' expected~['Alan_Turing']",
+          "is_done": true,
+          "error": null
+        }
+      }
+    },
+    {
+      "task": "hackernews_top_story",
+      "category": "mixed",
+      "conditions": {
+        "A_baseline": {
+          "success": true,
+          "steps": 1,
+          "time_seconds": 11.9,
+          "vision_calls": 0,
+          "verify_detail": "HN top='Microsoft degrades functionality of perpetually-licensed offline products' match=True",
+          "is_done": true,
+          "error": null
+        },
+        "B_som_only": {
+          "success": true,
+          "steps": 1,
+          "time_seconds": 12.8,
+          "vision_calls": 0,
+          "verify_detail": "HN top='Microsoft degrades functionality of perpetually-licensed offline products' match=True",
+          "is_done": true,
+          "error": null
+        },
+        "C_full_always": {
+          "success": true,
+          "steps": 1,
+          "time_seconds": 22.9,
+          "vision_calls": 1,
+          "verify_detail": "HN top='Microsoft degrades functionality of perpetually-licensed offline products' match=True",
+          "is_done": true,
+          "error": null
+        },
+        "D_ocr_only": {
+          "success": true,
+          "steps": 1,
+          "time_seconds": 19.7,
+          "vision_calls": 1,
+          "verify_detail": "HN top='Domain expertise has always been the real moat' match=True",
+          "is_done": true,
+          "error": null
+        },
+        "E_adaptive_full": {
+          "success": true,
+          "steps": 1,
+          "time_seconds": 16.4,
+          "vision_calls": 0,
+          "verify_detail": "HN top='Domain expertise has always been the real moat' match=True",
+          "is_done": true,
+          "error": null
+        },
+        "F_adaptive_no_som": {
+          "success": true,
+          "steps": 1,
+          "time_seconds": 14.9,
+          "vision_calls": 0,
+          "verify_detail": "HN top='Domain expertise has always been the real moat' match=True",
+          "is_done": true,
+          "error": null
+        }
+      }
+    },
+    {
+      "task": "arxiv_search",
+      "category": "dom-rich",
+      "conditions": {
+        "A_baseline": {
+          "success": true,
+          "steps": 6,
+          "time_seconds": 33.7,
+          "vision_calls": 0,
+          "verify_detail": "url='https://arxiv.org/search/?query=vision+language+model&searchtype=all&source=header' expected~['/search/']",
+          "is_done": true,
+          "error": null
+        },
+        "B_som_only": {
+          "success": true,
+          "steps": 5,
+          "time_seconds": 54.6,
+          "vision_calls": 0,
+          "verify_detail": "url='https://arxiv.org/search/?query=vision+language+model&searchtype=all&source=header' expected~['/search/']",
+          "is_done": true,
+          "error": null
+        },
+        "C_full_always": {
+          "success": true,
+          "steps": 3,
+          "time_seconds": 38.4,
+          "vision_calls": 2,
+          "verify_detail": "url='https://arxiv.org/search/?query=vision+language+model&searchtype=all&source=header' expected~['/search/']",
+          "is_done": true,
+          "error": null
+        },
+        "D_ocr_only": {
+          "success": true,
+          "steps": 3,
+          "time_seconds": 42.5,
+          "vision_calls": 2,
+          "verify_detail": "url='https://arxiv.org/search/?query=vision+language+model&searchtype=all&source=header' expected~['/search/']",
+          "is_done": true,
+          "error": null
+        },
+        "E_adaptive_full": {
+          "success": true,
+          "steps": 3,
+          "time_seconds": 33.0,
+          "vision_calls": 1,
+          "verify_detail": "url='https://arxiv.org/search/?query=vision+language+model&searchtype=all&source=header' expected~['/search/']",
+          "is_done": true,
+          "error": null
+        },
+        "F_adaptive_no_som": {
+          "success": true,
+          "steps": 3,
+          "time_seconds": 36.5,
+          "vision_calls": 1,
+          "verify_detail": "url='https://arxiv.org/search/?query=vision+language+model&searchtype=all&source=header' expected~['/search/']",
+          "is_done": true,
+          "error": null
+        }
+      }
+    },
+    {
+      "task": "quotes_first_author",
+      "category": "dom-rich",
+      "conditions": {
+        "A_baseline": {
+          "success": true,
+          "steps": 1,
+          "time_seconds": 11.4,
+          "vision_calls": 0,
+          "verify_detail": "result expected~['albert einstein'] (got 72 chars)",
+          "is_done": true,
+          "error": null
+        },
+        "B_som_only": {
+          "success": true,
+          "steps": 1,
+          "time_seconds": 10.2,
+          "vision_calls": 0,
+          "verify_detail": "result expected~['albert einstein'] (got 72 chars)",
+          "is_done": true,
+          "error": null
+        },
+        "C_full_always": {
+          "success": true,
+          "steps": 1,
+          "time_seconds": 17.6,
+          "vision_calls": 1,
+          "verify_detail": "result expected~['albert einstein'] (got 72 chars)",
+          "is_done": true,
+          "error": null
+        },
+        "D_ocr_only": {
+          "success": true,
+          "steps": 1,
+          "time_seconds": 17.1,
+          "vision_calls": 1,
+          "verify_detail": "result expected~['albert einstein'] (got 72 chars)",
+          "is_done": true,
+          "error": null
+        },
+        "E_adaptive_full": {
+          "success": true,
+          "steps": 1,
+          "time_seconds": 12.4,
+          "vision_calls": 0,
+          "verify_detail": "result expected~['albert einstein'] (got 72 chars)",
+          "is_done": true,
+          "error": null
+        },
+        "F_adaptive_no_som": {
+          "success": true,
+          "steps": 1,
+          "time_seconds": 13.5,
+          "vision_calls": 0,
+          "verify_detail": "result expected~['albert einstein'] (got 72 chars)",
+          "is_done": true,
+          "error": null
+        }
+      }
+    },
+    {
+      "task": "quotes_tag_nav",
+      "category": "mixed",
+      "conditions": {
+        "A_baseline": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 15.2,
+          "vision_calls": 0,
+          "verify_detail": "result expected~['gide'] (got 70 chars)",
+          "is_done": true,
+          "error": null
+        },
+        "B_som_only": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 13.9,
+          "vision_calls": 0,
+          "verify_detail": "result expected~['gide'] (got 62 chars)",
+          "is_done": true,
+          "error": null
+        },
+        "C_full_always": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 30.8,
+          "vision_calls": 2,
+          "verify_detail": "result expected~['gide'] (got 62 chars)",
+          "is_done": true,
+          "error": null
+        },
+        "D_ocr_only": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 29.1,
+          "vision_calls": 2,
+          "verify_detail": "result expected~['gide'] (got 67 chars)",
+          "is_done": true,
+          "error": null
+        },
+        "E_adaptive_full": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 17.5,
+          "vision_calls": 0,
+          "verify_detail": "result expected~['gide'] (got 67 chars)",
+          "is_done": true,
+          "error": null
+        },
+        "F_adaptive_no_som": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 19.1,
+          "vision_calls": 0,
+          "verify_detail": "result expected~['gide'] (got 62 chars)",
+          "is_done": true,
+          "error": null
+        }
+      }
+    },
+    {
+      "task": "books_price",
+      "category": "dom-rich",
+      "conditions": {
+        "A_baseline": {
+          "success": true,
+          "steps": 1,
+          "time_seconds": 11.1,
+          "vision_calls": 0,
+          "verify_detail": "result expected~['51.77'] (got 62 chars)",
+          "is_done": true,
+          "error": null
+        },
+        "B_som_only": {
+          "success": true,
+          "steps": 1,
+          "time_seconds": 10.3,
+          "vision_calls": 0,
+          "verify_detail": "result expected~['51.77'] (got 62 chars)",
+          "is_done": true,
+          "error": null
+        },
+        "C_full_always": {
+          "success": true,
+          "steps": 1,
+          "time_seconds": 20.4,
+          "vision_calls": 1,
+          "verify_detail": "result expected~['51.77'] (got 55 chars)",
+          "is_done": true,
+          "error": null
+        },
+        "D_ocr_only": {
+          "success": true,
+          "steps": 1,
+          "time_seconds": 18.9,
+          "vision_calls": 1,
+          "verify_detail": "result expected~['51.77'] (got 55 chars)",
+          "is_done": true,
+          "error": null
+        },
+        "E_adaptive_full": {
+          "success": true,
+          "steps": 1,
+          "time_seconds": 13.1,
+          "vision_calls": 0,
+          "verify_detail": "result expected~['51.77'] (got 55 chars)",
+          "is_done": true,
+          "error": null
+        },
+        "F_adaptive_no_som": {
+          "success": true,
+          "steps": 1,
+          "time_seconds": 13.7,
+          "vision_calls": 0,
+          "verify_detail": "result expected~['51.77'] (got 55 chars)",
+          "is_done": true,
+          "error": null
+        }
+      }
+    },
+    {
+      "task": "books_category",
+      "category": "dom-rich",
+      "conditions": {
+        "A_baseline": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 14.3,
+          "vision_calls": 0,
+          "verify_detail": "result expected~['himalayas'] (got 89 chars)",
+          "is_done": true,
+          "error": null
+        },
+        "B_som_only": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 13.5,
+          "vision_calls": 0,
+          "verify_detail": "result expected~['himalayas'] (got 89 chars)",
+          "is_done": true,
+          "error": null
+        },
+        "C_full_always": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 31.6,
+          "vision_calls": 2,
+          "verify_detail": "result expected~['himalayas'] (got 89 chars)",
+          "is_done": true,
+          "error": null
+        },
+        "D_ocr_only": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 30.9,
+          "vision_calls": 2,
+          "verify_detail": "result expected~['himalayas'] (got 89 chars)",
+          "is_done": true,
+          "error": null
+        },
+        "E_adaptive_full": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 18.5,
+          "vision_calls": 0,
+          "verify_detail": "result expected~['himalayas'] (got 89 chars)",
+          "is_done": true,
+          "error": null
+        },
+        "F_adaptive_no_som": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 21.0,
+          "vision_calls": 0,
+          "verify_detail": "result expected~['himalayas'] (got 89 chars)",
+          "is_done": true,
+          "error": null
+        }
+      }
+    },
+    {
+      "task": "herokuapp_checkbox",
+      "category": "dom-rich",
+      "conditions": {
+        "A_baseline": {
+          "success": true,
+          "steps": 6,
+          "time_seconds": 28.8,
+          "vision_calls": 0,
+          "verify_detail": "dom_js(document.querySelectorAll('#checkboxes input[type=checkbox]')[0] && document.querySelectorAll('#checkboxes input[type=checkbox]')[0].checked===true) -> 'True'",
+          "is_done": true,
+          "error": null
+        },
+        "B_som_only": {
+          "success": true,
+          "steps": 6,
+          "time_seconds": 29.0,
+          "vision_calls": 0,
+          "verify_detail": "dom_js(document.querySelectorAll('#checkboxes input[type=checkbox]')[0] && document.querySelectorAll('#checkboxes input[type=checkbox]')[0].checked===true) -> 'True'",
+          "is_done": true,
+          "error": null
+        },
+        "C_full_always": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 18.7,
+          "vision_calls": 2,
+          "verify_detail": "dom_js(document.querySelectorAll('#checkboxes input[type=checkbox]')[0] && document.querySelectorAll('#checkboxes input[type=checkbox]')[0].checked===true) -> 'True'",
+          "is_done": true,
+          "error": null
+        },
+        "D_ocr_only": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 18.2,
+          "vision_calls": 2,
+          "verify_detail": "dom_js(document.querySelectorAll('#checkboxes input[type=checkbox]')[0] && document.querySelectorAll('#checkboxes input[type=checkbox]')[0].checked===true) -> 'True'",
+          "is_done": true,
+          "error": null
+        },
+        "E_adaptive_full": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 17.3,
+          "vision_calls": 0,
+          "verify_detail": "dom_js(document.querySelectorAll('#checkboxes input[type=checkbox]')[0] && document.querySelectorAll('#checkboxes input[type=checkbox]')[0].checked===true) -> 'True'",
+          "is_done": true,
+          "error": null
+        },
+        "F_adaptive_no_som": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 16.0,
+          "vision_calls": 0,
+          "verify_detail": "dom_js(document.querySelectorAll('#checkboxes input[type=checkbox]')[0] && document.querySelectorAll('#checkboxes input[type=checkbox]')[0].checked===true) -> 'True'",
+          "is_done": true,
+          "error": null
+        }
+      }
+    },
+    {
+      "task": "herokuapp_dropdown",
+      "category": "dom-rich",
+      "conditions": {
+        "A_baseline": {
+          "success": true,
+          "steps": 5,
+          "time_seconds": 18.8,
+          "vision_calls": 0,
+          "verify_detail": "dom_js(document.getElementById('dropdown') && document.getElementById('dropdown').value==='2') -> 'True'",
+          "is_done": true,
+          "error": null
+        },
+        "B_som_only": {
+          "success": true,
+          "steps": 5,
+          "time_seconds": 22.3,
+          "vision_calls": 0,
+          "verify_detail": "dom_js(document.getElementById('dropdown') && document.getElementById('dropdown').value==='2') -> 'True'",
+          "is_done": true,
+          "error": null
+        },
+        "C_full_always": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 17.9,
+          "vision_calls": 2,
+          "verify_detail": "dom_js(document.getElementById('dropdown') && document.getElementById('dropdown').value==='2') -> 'True'",
+          "is_done": true,
+          "error": null
+        },
+        "D_ocr_only": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 17.6,
+          "vision_calls": 2,
+          "verify_detail": "dom_js(document.getElementById('dropdown') && document.getElementById('dropdown').value==='2') -> 'True'",
+          "is_done": true,
+          "error": null
+        },
+        "E_adaptive_full": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 13.4,
+          "vision_calls": 0,
+          "verify_detail": "dom_js(document.getElementById('dropdown') && document.getElementById('dropdown').value==='2') -> 'True'",
+          "is_done": true,
+          "error": null
+        },
+        "F_adaptive_no_som": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 15.4,
+          "vision_calls": 0,
+          "verify_detail": "dom_js(document.getElementById('dropdown') && document.getElementById('dropdown').value==='2') -> 'True'",
+          "is_done": true,
+          "error": null
+        }
+      }
+    }
+  ],
+  "summary": {
+    "by_condition": {
+      "A_baseline": {
+        "success_rate": 0.688,
+        "successes": 11,
+        "total": 16,
+        "avg_steps": 8.5,
+        "avg_time": 65.5,
+        "total_vision_calls": 0
+      },
+      "B_som_only": {
+        "success_rate": 0.688,
+        "successes": 11,
+        "total": 16,
+        "avg_steps": 9.69,
+        "avg_time": 55.2,
+        "total_vision_calls": 0
+      },
+      "C_full_always": {
+        "success_rate": 0.938,
+        "successes": 15,
+        "total": 16,
+        "avg_steps": 3.94,
+        "avg_time": 43.3,
+        "total_vision_calls": 37
+      },
+      "D_ocr_only": {
+        "success_rate": 0.938,
+        "successes": 15,
+        "total": 16,
+        "avg_steps": 2.56,
+        "avg_time": 30.6,
+        "total_vision_calls": 40
+      },
+      "E_adaptive_full": {
+        "success_rate": 0.938,
+        "successes": 15,
+        "total": 16,
+        "avg_steps": 3.88,
+        "avg_time": 41.1,
+        "total_vision_calls": 20
+      },
+      "F_adaptive_no_som": {
+        "success_rate": 0.875,
+        "successes": 14,
+        "total": 16,
+        "avg_steps": 5.38,
+        "avg_time": 45.6,
+        "total_vision_calls": 14
+      }
+    },
+    "by_category": {
+      "icon-heavy": {
+        "A_baseline": {
+          "success_rate": 0.0,
+          "successes": 0,
+          "total": 4
+        },
+        "B_som_only": {
+          "success_rate": 0.25,
+          "successes": 1,
+          "total": 4
+        },
+        "C_full_always": {
+          "success_rate": 0.75,
+          "successes": 3,
+          "total": 4
+        },
+        "D_ocr_only": {
+          "success_rate": 0.75,
+          "successes": 3,
+          "total": 4
+        },
+        "E_adaptive_full": {
+          "success_rate": 0.75,
+          "successes": 3,
+          "total": 4
+        },
+        "F_adaptive_no_som": {
+          "success_rate": 0.5,
+          "successes": 2,
+          "total": 4
+        }
+      },
+      "mixed": {
+        "A_baseline": {
+          "success_rate": 0.8,
+          "successes": 4,
+          "total": 5
+        },
+        "B_som_only": {
+          "success_rate": 0.6,
+          "successes": 3,
+          "total": 5
+        },
+        "C_full_always": {
+          "success_rate": 1.0,
+          "successes": 5,
+          "total": 5
+        },
+        "D_ocr_only": {
+          "success_rate": 1.0,
+          "successes": 5,
+          "total": 5
+        },
+        "E_adaptive_full": {
+          "success_rate": 1.0,
+          "successes": 5,
+          "total": 5
+        },
+        "F_adaptive_no_som": {
+          "success_rate": 1.0,
+          "successes": 5,
+          "total": 5
+        }
+      },
+      "dom-rich": {
+        "A_baseline": {
+          "success_rate": 1.0,
+          "successes": 7,
+          "total": 7
+        },
+        "B_som_only": {
+          "success_rate": 1.0,
+          "successes": 7,
+          "total": 7
+        },
+        "C_full_always": {
+          "success_rate": 1.0,
+          "successes": 7,
+          "total": 7
+        },
+        "D_ocr_only": {
+          "success_rate": 1.0,
+          "successes": 7,
+          "total": 7
+        },
+        "E_adaptive_full": {
+          "success_rate": 1.0,
+          "successes": 7,
+          "total": 7
+        },
+        "F_adaptive_no_som": {
+          "success_rate": 1.0,
+          "successes": 7,
+          "total": 7
+        }
+      }
+    }
+  }
+}
