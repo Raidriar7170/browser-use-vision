@@ -66,6 +66,16 @@ class RegionCaptionResponse(BaseModel):
     inference_time_ms: float
 
 
+class PhraseGroundingRequest(BaseModel):
+    image: str  # base64 encoded PNG
+    phrase: str  # natural-language phrase to ground (e.g. task instruction)
+
+
+class PhraseGroundingResponse(BaseModel):
+    regions: list[dict]  # [{caption, bbox: [x1,y1,x2,y2]}]
+    inference_time_ms: float
+
+
 @app.get("/health")
 async def health():
     if _backend and await _backend.is_ready():
@@ -177,6 +187,47 @@ async def regions(req: RegionCaptionRequest):
             )
 
     return RegionCaptionResponse(regions=region_list, inference_time_ms=elapsed)
+
+
+@app.post("/phrase_grounding", response_model=PhraseGroundingResponse)
+async def phrase_grounding(req: PhraseGroundingRequest):
+    """Phrase grounding using Florence-2 <CAPTION_TO_PHRASE_GROUNDING> task.
+
+    Grounds a natural-language phrase (e.g. the task instruction) to bbox(es) in
+    the image. Unlike OCR/region-caption, this is text->region: it localizes the
+    described target even for icon-only buttons with no readable text.
+    """
+    if not _backend:
+        raise HTTPException(503, "Backend not loaded")
+    if not hasattr(_backend, "_run_inference"):
+        raise HTTPException(400, "Phrase grounding only supported with Florence backend")
+
+    from PIL import Image as PILImage
+
+    img_bytes = base64.b64decode(req.image)
+    image = PILImage.open(io.BytesIO(img_bytes)).convert("RGB")
+    w, h = image.size
+
+    start = time.time()
+    result = await _backend._run_inference(image, "<CAPTION_TO_PHRASE_GROUNDING>", text_input=req.phrase)
+    elapsed = (time.time() - start) * 1000
+
+    parsed = result.get("<CAPTION_TO_PHRASE_GROUNDING>", {})
+    bboxes = parsed.get("bboxes", [])
+    labels = parsed.get("labels", [])
+
+    region_list = []
+    for bbox, label in zip(bboxes, labels):
+        if len(bbox) >= 4:
+            x1, y1, x2, y2 = bbox[0] / w, bbox[1] / h, bbox[2] / w, bbox[3] / h
+            region_list.append(
+                {
+                    "caption": (label or req.phrase).strip(),
+                    "bbox": [x1, y1, x2, y2],
+                }
+            )
+
+    return PhraseGroundingResponse(regions=region_list, inference_time_ms=elapsed)
 
 
 async def startup(backend_type: str, model_name: str = None, model_dir: str = None):

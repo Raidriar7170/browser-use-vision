@@ -209,21 +209,29 @@ def _get_viewport_bbox(node, viewport_offset_y: float) -> tuple[float, float, fl
     """
     获取元素在视口中的 bounding box (x, y, width, height)
 
-    优先使用 clientRects（视口坐标），其次用 bounds（文档坐标 - 滚动偏移）
+    优先使用 bounds/absolute_position（文档坐标，含真实 x/y，减去滚动偏移得视口坐标）。
+    注意：browser-use 0.12.x 的 snapshot ``clientRects`` 的 x/y 恒为 0（只有 width/height 可用），
+    若误用会把所有元素都定位到左上角 (0,0)——SoM 框与视觉 bbox 都会错位。故 clientRects
+    仅在缺少 bounds 时兜底。
     """
     snapshot = getattr(node, "snapshot_node", None)
     if snapshot is None:
         return None
 
-    # 优先 clientRects（已经是视口坐标）
-    client_rects = getattr(snapshot, "clientRects", None)
-    if client_rects and client_rects.width > 0 and client_rects.height > 0:
-        return (client_rects.x, client_rects.y, client_rects.width, client_rects.height)
-
-    # 其次 bounds（文档坐标，需要减去滚动偏移）
+    # 优先 bounds（文档坐标，含真实 x/y）→ 减去滚动偏移得视口坐标
     bounds = getattr(snapshot, "bounds", None)
     if bounds and bounds.width > 0 and bounds.height > 0:
         return (bounds.x, bounds.y - viewport_offset_y, bounds.width, bounds.height)
+
+    # 兜底：node.absolute_position（同为文档坐标）
+    abs_pos = getattr(node, "absolute_position", None)
+    if abs_pos and getattr(abs_pos, "width", 0) > 0 and getattr(abs_pos, "height", 0) > 0:
+        return (abs_pos.x, abs_pos.y - viewport_offset_y, abs_pos.width, abs_pos.height)
+
+    # 最后兜底：clientRects（x/y 可能为 0，但 width/height 有效）
+    client_rects = getattr(snapshot, "clientRects", None)
+    if client_rects and client_rects.width > 0 and client_rects.height > 0:
+        return (client_rects.x, client_rects.y, client_rects.width, client_rects.height)
 
     return None
 

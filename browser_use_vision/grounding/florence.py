@@ -160,16 +160,21 @@ class FlorenceBackend(VisualGroundingBackend):
         result = await self._run_inference(crop, "<MORE_DETAILED_CAPTION>")
         return result.get("<MORE_DETAILED_CAPTION>", "unknown element")
 
-    async def _run_inference(self, image: Image.Image, task_prompt: str) -> dict:
-        """执行 Florence-2 推理"""
-        loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(None, self._run_inference_sync, image, task_prompt)
+    async def _run_inference(self, image: Image.Image, task_prompt: str, text_input: Optional[str] = None) -> dict:
+        """执行 Florence-2 推理。
 
-    def _run_inference_sync(self, image: Image.Image, task_prompt: str) -> dict:
+        text_input 非空时（如 <CAPTION_TO_PHRASE_GROUNDING>），按 Florence 约定把短语拼到
+        task 后作为 prompt；后处理仍以 task_prompt 为 key。
+        """
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self._run_inference_sync, image, task_prompt, text_input)
+
+    def _run_inference_sync(self, image: Image.Image, task_prompt: str, text_input: Optional[str] = None) -> dict:
         """同步推理（在线程中执行）"""
         import torch
 
-        inputs = self._processor(text=task_prompt, images=image, return_tensors="pt")
+        prompt = task_prompt + text_input if text_input else task_prompt
+        inputs = self._processor(text=prompt, images=image, return_tensors="pt")
         # 确保 dtype 匹配模型（float16 on cuda, float32 on cpu/mps）
         dtype = torch.float16 if self.device == "cuda" else torch.float32
         inputs = {
@@ -277,6 +282,44 @@ class FlorenceBackend(VisualGroundingBackend):
         logger.info(f"Florence-2 Dense Caption: {len(regions)} regions found")
         return regions
 
+    async def caption_to_phrase_grounding(self, screenshot: bytes, phrase: str) -> list[dict]:
+        """
+        使用 Florence-2 <CAPTION_TO_PHRASE_GROUNDING> 把自然语言短语定位到 bbox。
+
+        与 OCR/region-caption 不同，这是 text→region：即便目标是无文字的 icon-only 按钮，
+        也能按描述（如 "next track button"）直接 ground 出位置。
+
+        Returns:
+            [{caption: str, bbox: [x1, y1, x2, y2]}]  坐标归一化到 [0,1]
+        """
+        if not self._loaded:
+            await self.load_model()
+
+        if self.remote_url:
+            return await self._phrase_grounding_remote(screenshot, phrase)
+
+        image = Image.open(io.BytesIO(screenshot)).convert("RGB")
+        w, h = image.size
+
+        result = await self._run_inference(image, "<CAPTION_TO_PHRASE_GROUNDING>", text_input=phrase)
+        parsed = result.get("<CAPTION_TO_PHRASE_GROUNDING>", {})
+        bboxes = parsed.get("bboxes", [])
+        labels = parsed.get("labels", [])
+
+        regions = []
+        for bbox, label in zip(bboxes, labels):
+            if len(bbox) >= 4:
+                x1, y1, x2, y2 = bbox[0] / w, bbox[1] / h, bbox[2] / w, bbox[3] / h
+                regions.append(
+                    {
+                        "caption": (label or phrase).strip(),
+                        "bbox": [x1, y1, x2, y2],
+                    }
+                )
+
+        logger.info(f"Florence-2 Phrase Grounding ('{phrase[:40]}'): {len(regions)} regions found")
+        return regions
+
     async def _ocr_remote(self, screenshot: bytes) -> list[dict]:
         """通过远程 API 调用 OCR"""
         import base64
@@ -305,6 +348,23 @@ class FlorenceBackend(VisualGroundingBackend):
             resp = await client.post(
                 f"{self.remote_url}/regions",
                 json={"image": img_b64},
+            )
+            resp.raise_for_status()
+            data = resp.json()
+
+        return data.get("regions", [])
+
+    async def _phrase_grounding_remote(self, screenshot: bytes, phrase: str) -> list[dict]:
+        """通过远程 API 调用 Phrase Grounding"""
+        import base64
+
+        import httpx
+
+        img_b64 = base64.b64encode(screenshot).decode()
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.post(
+                f"{self.remote_url}/phrase_grounding",
+                json={"image": img_b64, "phrase": phrase},
             )
             resp.raise_for_status()
             data = resp.json()

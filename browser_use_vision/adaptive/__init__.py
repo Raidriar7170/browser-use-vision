@@ -24,88 +24,121 @@ class VisionDecision(Enum):
 
 @dataclass
 class DOMConfidenceSignals:
-    """DOM 置信度信号"""
+    """DOM 置信度信号（基于 browser-use 索引序列化格式）"""
 
-    total_interactive: int = 0  # 可交互元素总数
-    unlabeled_buttons: int = 0  # 无文字的按钮数
-    images_without_alt: int = 0  # 缺少 alt 的图片数
-    generic_role_count: int = 0  # role=generic 的元素数
-    icon_class_count: int = 0  # 类名含 icon/svg 的元素数
-    custom_component_count: int = 0  # 自定义 Web 组件数
+    total_interactive: int = 0  # 可交互/被索引元素总数
+    labeled_elements: int = 0  # 有 label 属性或文本子节点的元素数
+    icon_only_elements: int = 0  # 纯图标元素数（无 label 属性、无文本子节点）
+    svg_collapsed: int = 0  # 被折叠的 <svg> 元素数
     total_text_length: int = 0  # DOM 文本总长度
+
+
+# browser-use 索引序列化的一行交互元素形如:
+#   [4]<button />
+#   \t[45]<div />
+#   |SHADOW(open)|*[137]<input type=range ... />
+#   [50]<svg /> <!-- SVG content collapsed -->
+# 即: 可选缩进 + 可选 |SHADOW...| 前缀 + 可选 * + [数字] + <标签 属性...>
+_INTERACTIVE_RE = re.compile(
+    r"^(?P<indent>\s*)(?:\|[^|]*\|)?\*?\[\d+\]<(?P<tag>[a-zA-Z][a-zA-Z0-9-]*)(?P<attrs>[^>]*)"
+)
+
+# 表明元素自带语义标签的属性（出现任一即视为 labeled）
+_LABEL_ATTRS = (
+    "aria-label=",
+    "alt=",
+    "title=",
+    "placeholder=",
+    "value=",
+    "name=",
+    "compound_components=",
+    "type=",
+    "checked=",
+)
+
+
+def _indent_width(s: str) -> int:
+    return len(s) - len(s.lstrip())
+
+
+def _has_label_attr(attrs: str) -> bool:
+    low = attrs.lower()
+    return any(a in low for a in _LABEL_ATTRS)
 
 
 def assess_dom_confidence(serialized_dom: str) -> tuple[float, DOMConfidenceSignals]:
     """
-    评估 DOM 序列化文本的信息充分度
+    评估 browser-use 序列化 DOM（``dom_state.llm_representation()`` 的索引格式）的信息充分度。
 
-    分析 DOM 文本中是否有足够的语义信息让 LLM 做出正确决策。
-    返回 0-1 的置信度分数和详细信号。
+    返回 0-1 的置信度分数与详细信号。分数越高表示 DOM 文本本身越能让 LLM 正确定位，
+    越低表示越依赖视觉（icon-only 按钮、折叠的 svg 等）。
 
-    低置信度场景:
-    - 大量无文字的按钮/链接 → LLM 无法区分
-    - img 标签缺少 alt 属性 → 纯图像无语义
-    - 自定义组件占比高 → DOM 结构不反映功能
-    - 可交互元素过少 → 可能漏检
+    判别逻辑（按真实索引格式，而非原始 HTML）:
+    - 一行匹配 ``[id]<tag ...>`` 视为一个被索引的交互元素。
+    - 该元素若带 label 属性（aria-label/alt/title/placeholder/value/type/compound_components 等），
+      或其后续缩进子节点中存在可读文本 / 带 label 的子元素 → labeled。
+    - 否则（裸 ``[id]<button />`` / 折叠的 ``<svg>``）→ icon-only，强烈指示需要视觉。
+    - 空串（读不到真实 DOM）→ 低分，倾向 FULL，绝不因「读不到」而误判 SKIP。
     """
     signals = DOMConfidenceSignals()
-    lines = serialized_dom.split("\n")
-
-    for line in lines:
-        line_lower = line.lower()
-
-        # 统计可交互元素
-        if any(tag in line_lower for tag in ["<button", "<a ", "<input", "<select", "<textarea", 'role="button"']):
-            signals.total_interactive += 1
-
-        # 无文字的按钮: <button.../> 或 <button></button> 没有内部文本
-        if re.search(r"<button[^>]*/?>\s*$", line_lower) or re.search(r"<button[^>]*>\s*</button>", line_lower):
-            signals.unlabeled_buttons += 1
-
-        # 缺少 alt 的图片
-        if "<img" in line_lower and "alt=" not in line_lower:
-            signals.images_without_alt += 1
-
-        # generic role
-        if 'role="generic"' in line_lower or "role=generic" in line_lower:
-            signals.generic_role_count += 1
-
-        # icon 类名
-        if re.search(r'class="[^"]*(?:icon|svg|fa-|material-icon)[^"]*"', line_lower):
-            signals.icon_class_count += 1
-
-        # 自定义组件（非标准 HTML 标签）
-        custom_match = re.search(r"<([a-z]+-[a-z]+)", line_lower)
-        if custom_match:
-            signals.custom_component_count += 1
-
-    # 文本总长度
     signals.total_text_length = len(serialized_dom)
 
-    # 计算置信度
-    score = 1.0
+    if not serialized_dom.strip():
+        # 读不到真实 DOM：宁可多调一次视觉，也不要盲目 SKIP。
+        return 0.3, signals
 
-    # 惩罚项
-    if signals.total_interactive > 0:
-        unlabeled_ratio = signals.unlabeled_buttons / signals.total_interactive
-        score -= unlabeled_ratio * 0.5  # 无标签按钮比例越高，越需要视觉
+    lines = serialized_dom.split("\n")
 
-    if signals.images_without_alt > 1:
-        score -= min(0.3, signals.images_without_alt * 0.05)
+    # 预解析每行：是否交互、缩进、属性、是否为纯文本行。
+    parsed = []  # (is_interactive, indent, attrs, tag, is_text)
+    for line in lines:
+        m = _INTERACTIVE_RE.match(line)
+        if m:
+            parsed.append((True, _indent_width(line), m.group("attrs"), m.group("tag").lower(), False))
+        else:
+            is_text = bool(line.strip())
+            parsed.append((False, _indent_width(line), "", "", is_text))
 
-    if signals.icon_class_count > 3:
-        score -= min(0.35, signals.icon_class_count * 0.05)
+    n = len(parsed)
+    for i, (is_inter, indent, attrs, tag, _is_text) in enumerate(parsed):
+        if not is_inter:
+            continue
+        # 装饰性图标标签（如 font-awesome 评分星标 <i>）几乎从不是动作目标，
+        # 计入会让文本丰富页（books 的星标）被噪声拖低分。排除之。
+        if tag == "i":
+            continue
+        signals.total_interactive += 1
+        if tag == "svg" or "svg content collapsed" in lines[i].lower():
+            signals.svg_collapsed += 1
 
-    if signals.generic_role_count > 5:
-        score -= min(0.2, signals.generic_role_count * 0.02)
+        labeled = _has_label_attr(attrs)
+        if not labeled:
+            # 扫描所有缩进更深的后代行：任一可读文本 / 带 label 的交互子元素 → labeled。
+            for j in range(i + 1, n):
+                cj_inter, cj_indent, cj_attrs, _cj_tag, cj_text = parsed[j]
+                if cj_indent <= indent:
+                    break  # 回到同级/上级，后代扫描结束
+                if cj_text:
+                    labeled = True
+                    break
+                if cj_inter and _has_label_attr(cj_attrs):
+                    labeled = True
+                    break
 
-    if signals.custom_component_count > 3:
-        score -= min(0.25, signals.custom_component_count * 0.03)
+        if labeled:
+            signals.labeled_elements += 1
+        else:
+            signals.icon_only_elements += 1
 
-    # 过少的交互元素也可疑（可能漏检）
-    if signals.total_interactive < 3 and signals.total_text_length > 500:
-        score -= 0.2
+    if signals.total_interactive == 0:
+        # 有文本但无任何被索引的交互元素：可能是纯阅读页，也可能解析异常。
+        # 给中等偏低分，避免无脑 SKIP。
+        return 0.4, signals
 
+    labeled_ratio = signals.labeled_elements / signals.total_interactive
+    # 基线 0.4，labeled 占比线性抬升至 1.0；折叠 svg 额外小幅惩罚。
+    score = 0.4 + 0.6 * labeled_ratio
+    score -= min(0.15, signals.svg_collapsed * 0.05)
     score = max(0.0, min(1.0, score))
     return score, signals
 
@@ -169,8 +202,9 @@ class AdaptiveVisionStrategy:
         # 基于 DOM 置信度决策
         confidence, signals = assess_dom_confidence(serialized_dom)
         logger.info(
-            f"DOM confidence: {confidence:.2f} | unlabeled_buttons={signals.unlabeled_buttons}, "
-            f"no_alt_images={signals.images_without_alt}, icons={signals.icon_class_count}"
+            f"DOM confidence: {confidence:.2f} | interactive={signals.total_interactive}, "
+            f"labeled={signals.labeled_elements}, icon_only={signals.icon_only_elements}, "
+            f"svg_collapsed={signals.svg_collapsed}"
         )
 
         if confidence >= self.high_threshold:

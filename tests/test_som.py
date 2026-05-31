@@ -110,19 +110,30 @@ class TestIsLightColor:
 
 
 class TestGetViewportBbox:
-    def test_uses_client_rects_first(self):
-        """优先使用 clientRects（视口坐标）"""
+    def test_prefers_bounds_over_client_rects(self):
+        """优先使用 bounds（含真实 x/y）。browser-use 0.12.x 的 clientRects x/y 恒为 0，
+        若误用会把所有元素定位到左上角——SoM 框与视觉 bbox 全部错位。"""
         node = MockDOMTreeNode(
             snapshot_node=MockSnapshotNode(
-                clientRects=MockDOMRect(10, 20, 100, 50),
-                bounds=MockDOMRect(10, 520, 100, 50),  # 不同值
+                clientRects=MockDOMRect(0, 0, 100, 50),  # 真实场景：x/y=0
+                bounds=MockDOMRect(310, 520, 100, 50),  # 真实坐标在 bounds
             )
         )
         result = _get_viewport_bbox(node, viewport_offset_y=500.0)
-        assert result == (10, 20, 100, 50)  # clientRects 的值
+        assert result == (310, 20.0, 100, 50)  # bounds.x, bounds.y - offset
 
-    def test_falls_back_to_bounds(self):
-        """无 clientRects 时用 bounds - scroll_offset"""
+    def test_falls_back_to_client_rects_when_no_bounds(self):
+        """无 bounds 时才兜底用 clientRects"""
+        node = MockDOMTreeNode(
+            snapshot_node=MockSnapshotNode(
+                clientRects=MockDOMRect(10, 20, 100, 50),
+            )
+        )
+        result = _get_viewport_bbox(node, viewport_offset_y=500.0)
+        assert result == (10, 20, 100, 50)
+
+    def test_bounds_subtracts_scroll_offset(self):
+        """bounds 是文档坐标，需减去滚动偏移得视口坐标"""
         node = MockDOMTreeNode(
             snapshot_node=MockSnapshotNode(
                 bounds=MockDOMRect(10, 520, 100, 50),

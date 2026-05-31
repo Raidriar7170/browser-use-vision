@@ -34,6 +34,7 @@ def _make_agent_instance(**overrides):
     agent.vision_backend = overrides.get("vision_backend", None)
     agent.enable_adaptive = overrides.get("enable_adaptive", True)
     agent.enable_som = overrides.get("enable_som", True)
+    agent.enable_dense_caption = overrides.get("enable_dense_caption", True)
     agent.som_max_elements = overrides.get("som_max_elements", 50)
     agent.som_line_width = overrides.get("som_line_width", 2)
     agent.som_font_size = overrides.get("som_font_size", 14)
@@ -204,12 +205,20 @@ class TestExtractDOMText:
         result = agent._extract_dom_text_from_state(state)
         assert result == "<div><button/></div>"
 
-    def test_fallback_to_str(self):
+    def test_dom_state_llm_representation(self):
+        """主路径: browser-use 0.12.x 把真实 DOM 放在 dom_state.llm_representation()"""
+        agent = _make_agent_instance()
+        dom_state = SimpleNamespace(llm_representation=lambda: "[4]<button />")
+        state = SimpleNamespace(dom_state=dom_state)
+        result = agent._extract_dom_text_from_state(state)
+        assert result == "[4]<button />"
+
+    def test_fallback_returns_empty(self):
+        """读不到真实 DOM 的对象 → 返回空串，绝不拿对象 repr 当 DOM"""
         agent = _make_agent_instance()
         state = {"some": "dict"}
         result = agent._extract_dom_text_from_state(state)
-        assert len(result) > 0
-        assert len(result) <= 2000
+        assert result == ""
 
     def test_none_attr(self):
         agent = _make_agent_instance()
@@ -424,6 +433,31 @@ class TestEnrichWithVision:
 
         asyncio.run(_run())
 
+    def test_dense_caption_disabled_skips_regions(self):
+        """enable_dense_caption=False 时 FULL 模式也不调用 dense_region_caption"""
+
+        async def _run():
+            backend = AsyncMock()
+            backend.is_ready = AsyncMock(return_value=True)
+            backend.ocr_with_region = AsyncMock(
+                return_value=[{"text": "Play", "bbox": [0.1, 0.1, 0.2, 0.2]}]
+            )
+            backend.dense_region_caption = AsyncMock(
+                return_value=[{"caption": "a button", "bbox": [0.1, 0.1, 0.2, 0.2]}]
+            )
+
+            agent = _make_agent_instance(vision_backend=backend, enable_dense_caption=False)
+            agent._inject_vision_context = MagicMock()
+
+            state = SimpleNamespace(screenshot=b"fake-png-data")
+            await agent._enrich_with_vision(state, VisionDecision.FULL)
+
+            backend.ocr_with_region.assert_awaited_once()
+            backend.dense_region_caption.assert_not_awaited()
+            agent._inject_vision_context.assert_called_once()
+
+        asyncio.run(_run())
+
 
 # ===========================================================================
 # Test: Adaptive strategy integration
@@ -454,3 +488,122 @@ class TestAdaptiveIntegration:
         assert agent.som_max_elements == 20
         assert agent.som_line_width == 3
         assert agent.som_font_size == 18
+
+    def test_dense_caption_config_default(self):
+        agent = _make_agent_instance()
+        assert agent.enable_dense_caption is True
+
+    def test_dense_caption_config_disabled(self):
+        agent = _make_agent_instance(enable_dense_caption=False)
+        assert agent.enable_dense_caption is False
+
+
+# ===========================================================================
+# Test: _match_vision_to_dom / _format_grounded_elements（视觉→DOM 桥）
+# ===========================================================================
+
+
+def _png_bytes(w: int, h: int) -> bytes:
+    """生成已知尺寸的 PNG 字节，供 _match_vision_to_dom 解码取尺寸。"""
+    import io
+
+    from PIL import Image
+
+    buf = io.BytesIO()
+    Image.new("RGB", (w, h), (255, 255, 255)).save(buf, format="PNG")
+    return buf.getvalue()
+
+
+def _node(x: int, y: int, w: int, h: int):
+    """构造带视口 bbox 的合成 DOM 节点（clientRects 路径）。"""
+    return SimpleNamespace(
+        snapshot_node=SimpleNamespace(clientRects=SimpleNamespace(x=x, y=y, width=w, height=h))
+    )
+
+
+def _state(selector_map: dict, pixels_above: float = 0.0):
+    return SimpleNamespace(
+        dom_state=SimpleNamespace(selector_map=selector_map),
+        pixels_above=pixels_above,
+    )
+
+
+class TestMatchVisionToDom:
+    """测试视觉检测 → 可点击 DOM index 的匹配"""
+
+    def test_overlapping_caption_attaches_to_correct_index(self):
+        agent = _make_agent_instance()
+        # 100x100 截图：元素 42 在 (10,10,30,30)→0.1..0.3，元素 43 远在 (70,70,90,90)
+        selector_map = {42: _node(10, 10, 20, 20), 43: _node(70, 70, 20, 20)}
+        state = _state(selector_map)
+        vision_dets = [{"caption": "skip to next track icon", "bbox": [0.1, 0.1, 0.3, 0.3], "source": "region"}]
+
+        matches = agent._match_vision_to_dom(state, vision_dets, _png_bytes(100, 100))
+
+        idx_to_cap = {m["index"]: m["caption"] for m in matches}
+        assert idx_to_cap.get(42) == "skip to next track icon"
+        assert 43 not in idx_to_cap  # 远处元素不应匹配
+
+    def test_no_overlap_no_match(self):
+        agent = _make_agent_instance()
+        selector_map = {42: _node(10, 10, 20, 20)}
+        state = _state(selector_map)
+        # 视觉检测落在右下角，与 DOM 元素无交集且中心互不含
+        vision_dets = [{"caption": "something", "bbox": [0.7, 0.7, 0.9, 0.9], "source": "region"}]
+
+        matches = agent._match_vision_to_dom(state, vision_dets, _png_bytes(100, 100))
+        assert matches == []
+
+    def test_center_contained_small_target_matches(self):
+        """小图标与「尺寸相当」的检测 IoU 偏低，但中心互含 → 应匹配"""
+        agent = _make_agent_instance()
+        # 元素 7：小 (50,50,10,10)→0.5..0.6，面积 0.01
+        selector_map = {7: _node(50, 50, 10, 10)}
+        state = _state(selector_map)
+        # 检测略大但在 4x 面积内（0.48..0.62 面积≈0.0196），含元素中心 → 命中
+        vision_dets = [{"caption": "eraser tool icon", "bbox": [0.48, 0.48, 0.62, 0.62], "source": "region"}]
+
+        matches = agent._match_vision_to_dom(state, vision_dets, _png_bytes(100, 100))
+        assert len(matches) == 1
+        assert matches[0]["index"] == 7
+        assert matches[0]["caption"] == "eraser tool icon"
+
+    def test_coarse_region_rejected(self):
+        """整页/大块 region（面积远大于元素）不应靠中心互含摊到小元素上"""
+        agent = _make_agent_instance()
+        selector_map = {7: _node(50, 50, 10, 10)}  # 面积 0.01
+        state = _state(selector_map)
+        # 巨大 region 0.1..0.9 面积 0.64 >> 4*0.01 → 拒绝；IoU 也极低
+        vision_dets = [{"caption": "music player app interface", "bbox": [0.1, 0.1, 0.9, 0.9], "source": "region"}]
+        matches = agent._match_vision_to_dom(state, vision_dets, _png_bytes(100, 100))
+        assert matches == []
+
+    def test_iou_beats_contained_only(self):
+        """同一元素有多个候选时，IoU 高者胜出"""
+        agent = _make_agent_instance()
+        selector_map = {5: _node(10, 10, 20, 20)}  # 0.1..0.3
+        state = _state(selector_map)
+        vision_dets = [
+            {"caption": "loose big region", "bbox": [0.0, 0.0, 0.9, 0.9], "source": "region"},  # 含中心但 IoU 低
+            {"caption": "tight play icon", "bbox": [0.1, 0.1, 0.3, 0.3], "source": "region"},  # IoU=1
+        ]
+        matches = agent._match_vision_to_dom(state, vision_dets, _png_bytes(100, 100))
+        assert len(matches) == 1
+        assert matches[0]["caption"] == "tight play icon"
+
+    def test_empty_inputs_return_empty(self):
+        agent = _make_agent_instance()
+        assert agent._match_vision_to_dom(_state({}), [], _png_bytes(100, 100)) == []
+        assert agent._match_vision_to_dom(_state({5: _node(10, 10, 20, 20)}), [], _png_bytes(100, 100)) == []
+
+    def test_format_grounded_elements(self):
+        agent = _make_agent_instance()
+        matches = [
+            {"index": 42, "caption": "skip to next track icon", "source": "region", "overlap": 0.61},
+            {"index": 37, "caption": "eraser tool icon", "source": "region", "overlap": 0.0},
+        ]
+        out = agent._format_grounded_elements(matches)
+        assert "[Vision→DOM Grounding" in out
+        assert "Element [42]" in out
+        assert "skip to next track icon" in out
+        assert "Element [37]" in out

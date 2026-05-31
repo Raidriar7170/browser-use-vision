@@ -34,24 +34,82 @@ DOM 无法提供足够信息。本项目通过视觉模型弥补这一缺陷。
 
 ## ✨ Key Results / 核心效果
 
-### Baseline vs Vision-Enhanced: Icon-Only Task
+> **Every success rate below comes from _objective verification_** — the DOM
+> state, the page URL, or a live ground-truth API is checked _after_ the agent
+> finishes. Success is **never** the agent self-reporting `done()`. See
+> [Success Methodology](#-success-methodology--成功判定方法论) for why this matters.
 
-| | Baseline Agent (DOM-only) | Vision-Enhanced Agent |
+### Where vision helps: icon-heavy pages
+
+On the 4 icon-only fixtures (buttons with no text/aria labels), forcing the
+vision pipeline on **doubles** objective success vs the DOM-only baseline:
+
+| Category | Baseline (DOM-only) | + Full Vision |
+|----------|:-:|:-:|
+| **icon-heavy** (4 tasks) | 1/4 (25%) | **2/4 (50%)** |
+| mixed (5 tasks) | 4/5 (80%) | 4/5 (80%) |
+| dom-rich (7 tasks) | 6/7 (86%) | 6/7 (86%) |
+
+### Overall (16-task ablation, objective verification)
+
+| Configuration | Objective Success | Vision Calls |
 |---|:-:|:-:|
-| **Result** | ❌ FAILED (timeout) | ✅ SUCCESS |
-| **Steps** | 29+ (blind clicking loop) | **2** (identify → click → done) |
-| **Time** | >120s | **~19s** |
-| **Behavior** | Randomly clicks buttons, cannot distinguish icons | SoM + OCR identifies "Next Track" among 10 unlabeled buttons |
+| Baseline (pure DOM) | 11/16 (69%) | 0 |
+| **Full vision every step** | **12/16 (75%)** | 35 |
+| **Adaptive (DOM-gated vision)** | 11/16 (69%) | **15** |
 
-### E2E Integration Tests (3/3 Pass)
+Full vision lifts overall objective success **+6%** this run, concentrated on the
+icon-heavy category where DOM parsing alone falls short. The **adaptive** strategy
+fires vision on only **15 calls (43% of full vision's budget)** — concentrated on
+icon/visual pages, skipped on text-rich ones — and **matches full vision exactly on
+icon-heavy (2/4)**, the category that actually needs it.
 
-| Scenario | Steps | Time | Visual Elements | Description |
-|----------|:-----:|:----:|:----:|-------------|
-| 🎵 Icon-Only Music Player | 2 | 19.0s | 8 | SVG icon buttons, no text labels |
-| 📊 Dynamic SPA Dashboard | 2 | 22.3s | 18 | Content loads after 2s delay |
-| 🎨 Visual Color Picker | 2 | 17.4s | 14 | Color swatches identified by appearance |
+### Vision's value scales with the VLM (gpt-4o-mini → gpt-4o)
 
-**Average: 2 steps, 19.6s, 100% first-attempt success rate.**
+The numbers above use the default **gpt-4o-mini**. Re-running the *same* 6-condition
+ablation with **gpt-4o** (same pipeline, same tasks, objective verification) shows the
+vision pipeline's payoff is gated by the driver LLM's ability to *reason over* the
+grounded elements — not by the grounding plumbing:
+
+| Metric | gpt-4o-mini | **gpt-4o** |
+|---|:-:|:-:|
+| Baseline (pure DOM) | 11/16 (69%) | 11/16 (69%) |
+| Full vision (best of C/D/E) | 12/16 (75%) | **15/16 (94%)** |
+| Full-vision gain over baseline | +6% | **+25%** |
+| **icon-heavy**: baseline → full vision | 1/4 → 2/4 | **0/4 → 3/4** |
+| Adaptive (E) vision calls vs full | 15 vs 35 | 20 vs 37 |
+
+Same SoM + Florence + vision→DOM bridge. The only change is the driver LLM, and the
+icon-heavy category jumps from a hard ceiling of 2/4 to 3/4 while overall success goes
+from a modest +6% to +25%. **The gpt-4o-mini bottleneck was the VLM's reasoning over
+grounded boxes, not Florence's grounding** — a weak VLM cannot exploit the pixels the
+pipeline hands it. Adaptive (E) still matches full vision at ~half the vision calls
+under both models. (gpt-4o data: `output/benchmark_results/ablation_report_gpt-4o.md`.)
+
+> **Honest caveats** (the kind a self-report metric would have hidden):
+> - Under **gpt-4o-mini**, adaptive **ties baseline overall (69%)** rather than
+>   beating it — but not because the gate is broken. Full vision's *own* ceiling is
+>   modest *with this weak VLM* (+6% over baseline), so there is little headroom to
+>   capture. On the category where vision helps (icon-heavy) adaptive matches full
+>   vision at a fraction of the cost. Under **gpt-4o** the same gate beats baseline
+>   by **+25%**. (An earlier release had the gate genuinely broken — it read a
+>   truncated object repr instead of the real DOM and fired vision on only 4/16
+>   tasks; that wiring + heuristic bug is now fixed.)
+> - The icon bottleneck is **VLM-bound, not pipeline-bound.** Three successive levers
+>   aimed at it — **(1)** the SoM bbox fix (prefer `bounds` over the always-zero
+>   `clientRects.x/y` in browser-use 0.12.x), **(2)** a vision→DOM bridge that matches
+>   vision detections back to clickable `[id]`s by IoU/center-containment, and
+>   **(3)** Florence-2 `<CAPTION_TO_PHRASE_GROUNDING>` fed the task phrase — did *not*
+>   move icon-heavy under gpt-4o-mini (a curl smoke gate showed Florence grounds a
+>   phrase only to *region* granularity: "Next Track button" → whole player card,
+>   never the small icon). But simply swapping in a stronger VLM (gpt-4o) lifted
+>   icon-heavy from 0/4 to 3/4 with the **same** Florence grounding. So the real next
+>   lever is a more capable multimodal driver LLM (and/or a stronger grounding backend
+>   like OmniParser / GroundingDINO for the last icon), not more plumbing on Florence-2.
+> - SoM annotation only pays off **paired with vision**: SoM-alone ≈ baseline
+>   (−6%), but adaptive-with-SoM beats adaptive-without-SoM by +13% (69% vs 56%).
+> - Single-run numbers vary due to LLM non-determinism and network timeouts; no
+>   single run is treated as definitive.
 
 ---
 
@@ -119,13 +177,18 @@ browser-use-vision/
 │   ├── server.py                   # FastAPI vision inference server
 │   └── config.py                   # Configuration management
 │
-├── tests/                          # Test suite (72 tests)
+├── tests/                          # Test suite (111 tests)
 │   ├── test_som.py                 # SoM annotation tests (24 tests)
+│   ├── test_enhanced_agent.py      # Enhanced agent tests
 │   ├── test_grounding.py           # Grounding module tests
-│   └── test_adaptive.py            # Adaptive strategy tests
+│   ├── test_adaptive.py            # Adaptive strategy tests
+│   └── test_benchmark_verify.py    # Objective verifier tests (31 tests)
 │
 ├── scripts/                        # Demo & evaluation scripts
+│   ├── benchmark_common.py         # ★ Tasks + verifiers + run engine (single source)
 │   ├── e2e_test.py                 # E2E integration test runner (3 scenarios)
+│   ├── real_world_benchmark.py     # Baseline vs Vision (16 tasks)
+│   ├── ablation_benchmark.py       # Ablation study runner (6 conditions)
 │   ├── demo_icon_only.py           # Baseline vs Vision comparison demo
 │   └── ...                         # Other demo/test scripts
 │
@@ -137,8 +200,9 @@ browser-use-vision/
 │
 ├── output/                         # Test results & reports
 │   ├── benchmark_results/          # ★ Primary evidence
-│   │   ├── real_world_11_tasks.json  # Machine-readable benchmark (11 tasks)
-│   │   └── real_world_11_tasks.md    # Human-readable report
+│   │   ├── real_world_results.json # Machine-readable benchmark (16 tasks)
+│   │   ├── ablation_results.json   # Ablation study data (6×16 runs)
+│   │   └── ablation_report.md      # Ablation study report
 │   ├── demo_results/               # Early-stage demo artifacts (single-task)
 │   └── e2e_results/                # E2E integration test results
 │
@@ -219,7 +283,7 @@ asyncio.run(main())
 ### 3. Run Tests
 
 ```bash
-# Unit tests (72 tests)
+# Unit tests (111 tests)
 pytest tests/ -v
 
 # With coverage report
@@ -273,22 +337,41 @@ is a unified vision foundation model. We use two key capabilities:
   fonts that DOM cannot access.
 - **`DENSE_REGION_CAPTION`** — Generates descriptions for all detected regions.
   Identifies icons, colors, shapes — exactly what DOM-only agents miss.
+  *Disabled by default* to save GPU time; under objective verification the
+  ablation shows OCR+Region and OCR-only are within run-to-run noise of each
+  other (C 12/16 vs D 11/16). Enable with `enable_dense_caption=True`.
 
 Florence-2（微软）是统一视觉基础模型。我们用 OCR_WITH_REGION 提取渲染文本坐标，
 用 DENSE_REGION_CAPTION 识别图标、颜色、形状。
 
 ### 3. Adaptive Vision Strategy
 
-Not every page needs expensive vision inference. The adaptive strategy evaluates DOM quality first:
+Not every page needs expensive vision inference. The adaptive strategy evaluates
+the **serialized DOM** (browser-use's indexed `[id]<tag ...>` representation) first:
 
 ```
 DOM Confidence Score (0-1):
-  → High (≥0.8): Rich semantic tags, aria-labels → Skip vision, use DOM
-  → Medium (0.4-0.8): Mixed signals → Partial vision
-  → Low (<0.4): Icon-heavy, Canvas, custom components → Full vision
-
-Result: ~50% of steps skip vision entirely → 40% latency reduction
+  → High (≥0.8): interactive elements carry text/aria/alt labels → Skip vision
+  → Medium (0.5-0.8): some labeled, some bare → LIGHTWEIGHT (OCR only)
+  → Low (<0.5): icon-only buttons, collapsed <svg>, no readable labels → FULL vision
+  (consecutive failures or a detected loop force FULL regardless of score)
 ```
+
+The score is `0.4 + 0.6 × (labeled ÷ total_interactive)`, minus a small penalty for
+collapsed `<svg>`. An element counts as *labeled* if it carries an `aria-label` / `alt`
+/ `title` / `placeholder` / `value` / `type` / `compound_components` attribute, **or**
+has a readable text child on the next indented line; otherwise it is *icon-only*.
+Decorative `<i>` glyphs (e.g. rating stars) are excluded so they don't drag text-rich
+pages down. An empty string (DOM unreadable) scores low so the gate prefers vision
+rather than wrongly skipping.
+
+> **Validated in the objective ablation:** across the 16-task suite the adaptive
+> agent fires vision on **15 calls (43% of always-on's 35)** — concentrated on
+> icon/visual pages and skipped on text-rich ones — and **matches full vision on
+> icon-heavy (2/4 = 2/4)**, the category where vision actually helps. (A previous
+> release had this gate broken: it assessed a truncated object repr instead of the
+> real serialized DOM and degenerated to always-skip / baseline accuracy. The
+> wiring and the index-format heuristic are now fixed and unit-tested.)
 
 ### 4. VisionEnhancedAgent
 
@@ -312,43 +395,104 @@ class VisionEnhancedAgent(Agent):
 
 ---
 
+## 🔬 Success Methodology / 成功判定方法论
+
+Earlier versions of this benchmark scored a task as "passed" whenever the agent
+called `done()` and stopped under the step limit — i.e. the agent **graded its
+own homework**. That inflates numbers: an agent routinely reports *"Successfully
+clicked the Next Track button"* while the DOM shows nothing changed.
+
+Every benchmark in this repo now uses **objective verification**. After
+`agent.run()` finishes, a per-task `verify(page, final_result)` callable inspects
+the real post-run state:
+
+| Verifier | Checks | Used for |
+|----------|--------|----------|
+| `dom_js(expr)` | a JS expression is truthy in the live page | action tasks (clicks, toggles, selections) |
+| `url_has(*subs)` | the final URL contains substrings | navigation tasks |
+| `text_has(*subs)` | the agent's answer contains expected text | static extraction tasks |
+| `live_hn_top()` | answer matches the current #1 Hacker News story via the official Firebase API | dynamic extraction |
+
+`is_done` and step count are still recorded — but only for analysis, never as
+the success signal. The verifiers are unit-tested independently of any browser
+([`tests/test_benchmark_verify.py`](tests/test_benchmark_verify.py), 31 cases),
+and all task definitions, verifiers, and the run engine live in one place
+([`scripts/benchmark_common.py`](scripts/benchmark_common.py)).
+
+**Task suite: 16 tasks** — 6 local icon-only fixtures (where vision matters most)
++ 10 public sites (Wikipedia, Hacker News, arXiv, quotes/books.toscrape.com,
+the-internet.herokuapp.com), real sites in the majority.
+
+---
+
 ## 📊 Performance / 性能
 
-### Real-World Benchmark (11 tasks, Baseline vs Vision-Enhanced)
+> All numbers below are **objective-verification** success rates (DOM / URL /
+> live API), not agent self-report. Model gpt-4o-mini, headless Chromium,
+> Florence-2 on a remote GPU.
 
-Validated on real-world web tasks across 3 difficulty categories.
-Each task runs with both baseline (DOM-only) and vision-enhanced agents
-under identical conditions (gpt-4o-mini, headless Chromium, max 8 steps).
+### Real-World Benchmark (16 tasks, Baseline vs Vision-Enhanced)
 
-| Task | Category | Baseline | Vision | Winner |
-|------|----------|----------|--------|--------|
-| icon_music_player | icon-heavy | ✅ 2 steps | ✅ 2 steps | Tie |
-| color_picker | icon-heavy | ❌ timeout | ✅ 2 steps | **Vision** ✨ |
-| toolbar_eraser | icon-heavy | ✅ 2 steps | ❌ timeout | Baseline |
-| social_feed_like | icon-heavy | ✅ 2 steps | ✅ 2 steps | Tie |
-| ecommerce_filter_color | mixed | ✅ 2 steps | ✅ 2 steps | Tie |
-| wikipedia_toc_nav | mixed | ✅ 2 steps | ✅ 3 steps | Baseline |
-| hackernews_top_story | mixed | ✅ 2 steps | ✅ 1 step | Vision |
-| github_trending | dom-rich | ✅ 2 steps | ✅ 1 step | Vision |
-| arxiv_search | dom-rich | ❌ timeout | ✅ 4 steps | **Vision** ✨ |
-| ecommerce_add_cart | dom-rich | ✅ 2 steps | ✅ 2 steps | Tie |
-| dashboard_chart_tab | dom-rich | ❌ timeout | ✅ 2 steps | **Vision** ✨ |
+Each task runs twice — DOM-only baseline and the adaptive vision agent — under
+identical conditions.
 
-**Success Rate: Baseline 8/11 (72%) → Vision 10/11 (90%)**
+**Success Rate: Baseline 8/16 (50%) → Vision 10/16 (62%)**
 
-> **Note:** This is a real-world-style benchmark snapshot, not a formal
-> WebArena/Mind2Web-scale evaluation. Results may vary across runs due to
-> LLM non-determinism and network conditions.
-> Raw data: [`output/benchmark_results/real_world_11_tasks.json`](output/benchmark_results/real_world_11_tasks.json)
+Clean vision wins (baseline fails, vision succeeds): `color_picker`,
+`arxiv_search`, `herokuapp_checkbox`. Several baseline failures are infra
+timeouts (`0 steps / 125s` — LLM/page-load latency, not capability), which we
+report honestly rather than hide. Note the *default* agent uses the adaptive
+strategy, which skipped vision on most tasks (see caveat above) — so the
+head-to-head understates vision's ceiling. The ablation below isolates that
+ceiling by forcing vision on.
 
-Key observations:
-- Vision wins **5 tasks**, baseline wins 2, ties 4
-- On icon-heavy / visually complex pages, baseline fails while vision succeeds
-  (color_picker, arxiv_search, dashboard_chart_tab)
-- On DOM-rich sites (GitHub, HN, Wikipedia), adaptive strategy skips vision
-  → zero GPU overhead
-- One honest loss: toolbar_eraser (vision timeout due to complex SVG DOM),
-  showing the approach isn't universally superior
+> Raw data: [`output/benchmark_results/real_world_results.json`](output/benchmark_results/real_world_results.json)
+
+### Ablation Study (6 conditions × 16 tasks = 96 runs)
+
+Systematically disabling each component to measure its individual contribution.
+
+| Condition | Description | Success Rate | Avg Steps | Vision Calls |
+|-----------|-------------|:----------:|:---------:|:------------:|
+| A. Baseline | Pure DOM, no vision, no SoM | 11/16 (69%) | 1.7 | 0 |
+| B. SoM Only | SoM annotation, no vision model | 10/16 (62%) | 2.4 | 0 |
+| **C. Full Always** | **OCR + Region Caption every step** | **12/16 (75%)** | 2.3 | 35 |
+| D. OCR Only | OCR every step, no Region Caption | 11/16 (69%) | 2.3 | 36 |
+| **E. Adaptive Full** | **SoM + DOM-gated vision (default config)** | 11/16 (69%) | 2.3 | **15** |
+| F. Adaptive No SoM | Adaptive vision, no SoM | 9/16 (56%) | 1.4 | 9 |
+
+**Key findings (objective verification overturns the old self-report story):**
+
+| Comparison | Delta | Insight |
+|------------|:-----:|---------|
+| C vs A | **+6%** | Full vision is the strongest config (75% vs 69%); the gain lands on icon-heavy (25%→50%) |
+| C vs D | 0 (+6%/−6% noise) | Region Caption vs OCR-only is within run-to-run noise — no clear winner |
+| **E: 15 vs 35 calls** | **43% budget** | Adaptive gate fires vision on icon/visual pages, skips text pages — and **matches C on icon-heavy (2/4)** |
+| E vs F | **+13%** | SoM *paired with vision* helps (69% vs 56%); SoM alone (B vs A, −6%) does not |
+
+**By category** — the signal is concentrated where DOM genuinely fails:
+
+| Category | Baseline (A) | Full Vision (C) | Adaptive (E) |
+|----------|:----------:|:---------------:|:------------:|
+| icon-heavy (4 tasks) | 25% | **50%** | **50%** |
+| mixed (5 tasks) | 80% | 80% | 60% |
+| dom-rich (7 tasks) | 86% | 86% | 86% |
+
+> **What changed from the previous (broken-gate) ablation:** the old report
+> claimed "adaptive matches full vision" while the gate was in fact *broken* —
+> it assessed a truncated object repr, fired vision on only 4/16 tasks, and
+> degenerated to baseline. After fixing the wiring (`dom_state.llm_representation()`)
+> and rewriting the confidence heuristic for browser-use's indexed format, the gate
+> now genuinely targets vision: **15 calls (43% of always-on), matching full vision
+> on icon-heavy at a fraction of the cost.** The remaining honest gap is that full
+> vision's *own* ceiling is modest *with gpt-4o-mini* (+6%) and two icon fixtures
+> resist even full vision — but this is a **driver-VLM limit, not a gate or pipeline
+> limit**: re-running the identical ablation with **gpt-4o** lifts icon-heavy from
+> 0/4 to 3/4 and overall full-vision gain from +6% to **+25%** (see the
+> "Vision's value scales with the VLM" section above; data in `ablation_report_gpt-4o.md`).
+>
+> Raw data: [`output/benchmark_results/ablation_results.json`](output/benchmark_results/ablation_results.json)
+> | Report: [`output/benchmark_results/ablation_report.md`](output/benchmark_results/ablation_report.md)
 
 ### Latency
 
@@ -358,8 +502,7 @@ Key observations:
 | Florence-2 region detection | ~0.5s / call (A100) |
 | SoM annotation overhead | < 50ms |
 | End-to-end step time (with vision) | ~10s (including LLM) |
-| Adaptive skip rate | ~50% of steps |
-| Unit tests | 72 passing |
+| Unit tests | 111 passing |
 | E2E scenarios | 3/3 passing |
 
 ---
@@ -388,13 +531,17 @@ Key observations:
 - [x] SoM (Set-of-Mark) screenshot annotation
 - [x] Adaptive vision strategy (DOM confidence scoring)
 - [x] E2E integration tests with HTML fixtures
-- [x] CI pipeline (GitHub Actions) — 72 unit tests
+- [x] CI pipeline (GitHub Actions) — 111 unit tests
+- [x] **Objective success verification** (DOM / URL / live API, not agent self-report)
+- [x] Real-world benchmark (16 tasks) + ablation study (6 conditions × 16 tasks)
+- [x] **Fix + re-tune adaptive vision gate** — read real serialized DOM, score the
+      indexed format; now fires 15/35 vision calls, matching full vision on icon-heavy
 - [~] OmniParser V2 backend (code complete, needs integration testing)
 - [ ] GroundingDINO as alternative detection backend
-- [x] Real-world benchmark (11 tasks, 90% vs 72% success rate)
+- [ ] **Learn the gate threshold from agent traces** — current thresholds are
+      hand-set; close the residual icon-grounding gap (2 fixtures resist even full vision)
 - [ ] Benchmark against WebArena / Mind2Web evaluation suites
 - [ ] Video stream mode for real-time agent observation
-- [ ] Confidence evaluator v2: learn threshold from agent traces
 
 ---
 
@@ -417,13 +564,17 @@ MIT License. See [LICENSE](LICENSE) for details.
 > - **ML Engineering** — Deployed Florence-2 vision foundation model as a
 >   GPU inference service; designed SoM (Set-of-Mark) annotation pipeline
 >   for visual grounding
-> - **Performance Optimization** — Adaptive inference strategy reduces vision
->   model calls by 50% through rule-based DOM confidence scoring
-> - **Quantitative Results** — Evaluated on 11 real-world browser tasks:
->   vision-enhanced agent achieves 90% success (10/11) vs. baseline 72%
->   (8/11). Wins 5 tasks, loses 2, ties 4. Includes 72 unit tests + 3 E2E
->   integration scenarios (all passing)
-> - **Software Engineering** — 1,800-line core module, 72 unit tests,
+> - **Performance Optimization** — Adaptive inference gates vision on rule-based
+>   DOM-confidence scoring of browser-use's indexed serialization: **15 vision
+>   calls vs 35 for always-on (43% of the budget), matching full vision on the
+>   icon-heavy category (2/4) where it actually helps**
+> - **Quantitative Results** — Evaluated on 16 tasks with **objective
+>   verification** (DOM / URL / live API, not agent self-report): forcing vision
+>   on lifts success to 75% (12/16) vs 69% baseline, doubling icon-heavy success
+>   (25%→50%). Ablation (6 conditions × 16 = 96 runs) isolates each component's
+>   real contribution and overturns earlier self-reported claims.
+>   111 unit tests + 3 E2E integration scenarios (all passing)
+> - **Software Engineering** — 1,800-line core module, 111 unit tests,
 >   3 E2E integration tests, CI pipeline, typed Python codebase
 >
 > ---
@@ -435,10 +586,13 @@ MIT License. See [LICENSE](LICENSE) for details.
 > - **系统设计** — 为热门开源框架（94k ⭐）设计无侵入插件架构，零上游修改
 > - **ML 工程** — 部署 Florence-2 视觉基础模型为 GPU 推理服务；
 >   设计 SoM 标注管线实现视觉定位
-> - **性能优化** — 自适应推理策略通过 DOM 置信度评估将视觉模型调用
->   减少 50%
-> - **量化结果** — 11 个真实浏览器任务评测：视觉增强 Agent 成功率
->   90%（10/11）vs 基线 72%（8/11）。赢 5 场、输 2 场、平 4 场。
->   含 72 单元测试 + 3 个 E2E 集成场景（全部通过）
-> - **工程规范** — 1800 行核心模块、72 单元测试、3 个 E2E 集成测试、
+> - **性能优化** — 自适应推理基于 browser-use 索引序列化 DOM 的置信度评分门控视觉
+>   调用：**全套 15 次视觉调用 vs 全开 35 次（仅 43% 预算），并在视觉真正起作用的
+>   图标类任务上追平全视觉（2/4）**
+> - **量化结果** — 16 个任务、**客观校验**（DOM / URL / 实时 API，非 Agent
+>   自报）：强制开启视觉将成功率提升至 75%（12/16）vs 基线 69%，图标类
+>   任务成功率翻倍（25%→50%）。消融实验（6 条件 × 16 = 96 次运行）量化各
+>   组件真实贡献，并推翻了早期自报指标的结论。
+>   含 111 单元测试 + 3 个 E2E 集成场景（全部通过）
+> - **工程规范** — 1800 行核心模块、111 单元测试、3 个 E2E 集成测试、
 >   CI 流水线、类型化 Python 代码
