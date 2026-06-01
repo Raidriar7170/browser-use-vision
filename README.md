@@ -474,22 +474,20 @@ the-internet.herokuapp.com), real sites in the majority.
 > live API), not agent self-report. Model gpt-4o-mini, headless Chromium,
 > Florence-2 on a remote GPU.
 
-### Real-World Benchmark (16 tasks, Baseline vs Vision-Enhanced)
+### One suite, one scoreboard
 
-Each task runs twice — DOM-only baseline and the adaptive vision agent — under
-identical conditions.
+All numbers below come from the **same 16 tasks**. The **ablation study** is the
+canonical evaluation — it runs every task under all six conditions, so the
+DOM-only baseline (condition **A**, 69%), the default adaptive agent (condition
+**E**, 69%), and forced full vision (condition **C**, 75% on gpt-4o-mini / **94%
+on gpt-4o**) are all measured on one identical suite. There is no second,
+competing scoreboard.
 
-**Success Rate: Baseline 8/16 (50%) → Vision 10/16 (62%)**
-
-Clean vision wins (baseline fails, vision succeeds): `color_picker`,
-`arxiv_search`, `herokuapp_checkbox`. Several baseline failures are infra
-timeouts (`0 steps / 125s` — LLM/page-load latency, not capability), which we
-report honestly rather than hide. Note the *default* agent uses the adaptive
-strategy, which skipped vision on most tasks (see caveat above) — so the
-head-to-head understates vision's ceiling. The ablation below isolates that
-ceiling by forcing vision on.
-
-> Raw data: [`output/benchmark_results/real_world_results.json`](output/benchmark_results/real_world_results.json)
+> A separate single-pass head-to-head (default adaptive agent vs. baseline) is
+> archived in [`real_world_results.json`](output/benchmark_results/real_world_results.json),
+> but its baseline is noisier — several failures are `0 steps / 125s` infra
+> timeouts (page-load/LLM latency, not capability). That contamination is exactly
+> why the controlled ablation below, not any single pass, is the headline.
 
 ### Ablation Study (6 conditions × 16 tasks = 96 runs)
 
@@ -521,18 +519,13 @@ Systematically disabling each component to measure its individual contribution.
 | mixed (5 tasks) | 80% | 80% | 60% |
 | dom-rich (7 tasks) | 86% | 86% | 86% |
 
-> **What changed from the previous (broken-gate) ablation:** the old report
-> claimed "adaptive matches full vision" while the gate was in fact *broken* —
-> it assessed a truncated object repr, fired vision on only 4/16 tasks, and
-> degenerated to baseline. After fixing the wiring (`dom_state.llm_representation()`)
-> and rewriting the confidence heuristic for browser-use's indexed format, the gate
-> now genuinely targets vision: **15 calls (43% of always-on), matching full vision
-> on icon-heavy at a fraction of the cost.** The remaining honest gap is that full
-> vision's *own* ceiling is modest *with gpt-4o-mini* (+6%) and two icon fixtures
-> resist even full vision — but this is a **driver-VLM limit, not a gate or pipeline
-> limit**: re-running the identical ablation with **gpt-4o** lifts icon-heavy from
-> 0/4 to 3/4 and overall full-vision gain from +6% to **+25%** (see the
-> "Vision's value scales with the VLM" section above; data in `ablation_report_gpt-4o.md`).
+> **Note on a prior broken gate:** an earlier report claimed "adaptive matches
+> full vision" while the gate was in fact firing on only 4/16 tasks (it read a
+> truncated object repr). After fixing the wiring and heuristic, the gate now
+> genuinely targets vision — **15 calls (43% of always-on)**, matching full
+> vision on icon-heavy at a fraction of the cost. (Full vision's modest +6%
+> ceiling here is a gpt-4o-mini limit, not a gate one — see the cross-model
+> section above.)
 >
 > Raw data: [`output/benchmark_results/ablation_results.json`](output/benchmark_results/ablation_results.json)
 > | Report: [`output/benchmark_results/ablation_report.md`](output/benchmark_results/ablation_report.md)
