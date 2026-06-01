@@ -134,40 +134,34 @@ cost. Swap in gpt-4o and the same gate beats baseline by +25%.
 
 ## 🏗️ Architecture / 系统架构
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                    VisionEnhancedAgent                        │
-│            (inherits browser_use.Agent, zero-invasive)        │
-├──────────────────────────────────────────────────────────────┤
-│                                                              │
-│  ┌──────────────┐    ┌──────────────┐    ┌────────────────┐ │
-│  │  SoM Module  │───▶│  Florence-2  │───▶│ LLM (GPT-4o)  │ │
-│  │  Set-of-Mark │    │ OCR + Region │    │ Decision Maker │ │
-│  │  Annotator   │    │  Detection   │    │                │ │
-│  └──────────────┘    └──────────────┘    └────────────────┘ │
-│         │                   │                     │          │
-│         ▼                   ▼                     ▼          │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │              Enriched Page Context                    │   │
-│  │  • Numbered interactive elements with bounding boxes  │   │
-│  │  • OCR text from non-DOM rendered content            │   │
-│  │  • Region descriptions (colors, icons, shapes)        │   │
-│  └──────────────────────────────────────────────────────┘   │
-│                            │                                 │
-│                            ▼                                 │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │          browser-use Action Execution                 │   │
-│  │          click / type / scroll / done                 │   │
-│  └──────────────────────────────────────────────────────┘   │
-│                                                              │
-└──────────────────────────────────────────────────────────────┘
-                             │
-                   ┌─────────┴──────────┐
-                   │  Vision API Server  │
-                   │  (FastAPI on GPU)   │
-                   │  /ocr  /regions     │
-                   │  /detect /describe  │
-                   └────────────────────┘
+```mermaid
+flowchart TB
+    subgraph agent["VisionEnhancedAgent — inherits browser_use.Agent (zero-invasive)"]
+        direction TB
+        dom["DOM state<br/>(from browser-use)"]
+        gate{"Adaptive gate<br/>DOM confidence score<br/>SKIP · LIGHTWEIGHT · FULL"}
+        som["SoM annotator<br/>numbered bounding boxes"]
+        flo["Florence-2<br/>OCR + region caption"]
+        bridge["Vision → DOM bridge<br/>match boxes back to clickable [id]"]
+        ctx["Enriched page context<br/>• numbered elements + boxes<br/>• OCR text from non-DOM content<br/>• region captions (colors, icons)"]
+        llm["LLM decision maker<br/>gpt-4o-mini default · gpt-4o best"]
+        act["browser-use action<br/>click · type · scroll · done"]
+
+        dom --> gate
+        gate -->|"high confidence → skip vision"| ctx
+        gate -->|"low → run vision"| som
+        som --> flo --> bridge --> ctx
+        ctx --> llm --> act
+    end
+
+    flo -. HTTP .-> api["Vision API Server<br/>FastAPI on GPU<br/>/ocr · /regions · /detect · /describe"]
+
+    classDef decide fill:#1f6feb,stroke:#1f6feb,color:#fff
+    classDef vision fill:#8957e5,stroke:#8957e5,color:#fff
+    classDef gpu fill:#30363d,stroke:#f78166,color:#fff
+    class gate,llm decide
+    class som,flo,bridge vision
+    class api gpu
 ```
 
 **Key Design**: The entire module is a _non-invasive overlay_ —
