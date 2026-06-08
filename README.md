@@ -1,155 +1,106 @@
-# 🔍 Browser-Use Vision Enhancement
+中文 | [English](README_en.md)
+
+# 🔍 Browser-Use 视觉增强
 
 [![Tests](https://github.com/Raidriar7170/browser-use-vision/actions/workflows/tests.yml/badge.svg)](https://github.com/Raidriar7170/browser-use-vision/actions/workflows/tests.yml)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 
-**A vision-grounding plugin for
-[browser-use](https://github.com/browser-use/browser-use) (⭐ 94k)
-that enables browser agents to understand what they _see_,
-not just what they read from the DOM.**
-
-为 [browser-use](https://github.com/browser-use/browser-use)（⭐ 94k）浏览器 Agent 框架提供视觉 Grounding 增强——让 Agent 不仅能读 DOM，还能"看见"页面。
+**为 [browser-use](https://github.com/browser-use/browser-use)（⭐ 94k）浏览器 Agent 框架提供视觉 Grounding 增强插件——让 Agent 不仅能读 DOM，还能"看见"页面。**
 
 ---
 
-## ⚡ TL;DR
+## ⚡ 一句话总结
 
-> **On icon-only UIs that DOM parsing literally cannot read, adding the vision
-> pipeline takes a gpt-4o browser agent from `0/4 → 3/4`, and overall objective
-> success from `69% → 94%` (+25%).**
+> **在 DOM 完全无法解析的纯图标 UI 上，加入视觉管线后 gpt-4o 浏览器 Agent
+> 从 `0/4 → 3/4`，整体客观成功率从 `69% → 94%`（+25%）。**
 
-`94% objective success · +25% over DOM-only · rescues icon-only UIs 0/4 → 3/4`
-— every number from **objective verification** (DOM / URL / live API), never the
-agent grading its own work.
+`94% 客观成功率 · 比纯 DOM +25% · 纯图标 UI 0/4 → 3/4`
+——所有数字来自**客观校验**（DOM 状态 / URL / 实时 API），绝非 Agent 自我评分。
 
-![Set-of-Mark annotation: a DOM-only agent sees unlabeled icons; vision numbers every clickable element](docs/assets/som_icons.png)
+![SoM 标注：DOM-only Agent 看到未标记图标；视觉增强为每个可点击元素编号](docs/assets/som_icons.png)
 
-*Left: an icon-only music player — every control is a bare `<svg>` with no
-text/aria label, invisible to DOM parsing. Right: Set-of-Mark gives the VLM a
-numbered handle on each clickable element. [How success is measured →](#-success-methodology--成功判定方法论)*
+*左：纯图标音乐播放器——每个控件都是无文本/aria-label 的 `<svg>`，DOM 无法解析。
+右：Set-of-Mark 为 VLM 提供每个可点击元素的编号句柄。*
 
-![Vision's value scales with VLM capability: baseline vs full vision by category, gpt-4o-mini vs gpt-4o](docs/assets/results.png)
+![视觉增强的价值随 VLM 能力扩展：baseline vs 全视觉，按分类，gpt-4o-mini vs gpt-4o](docs/assets/results.png)
 
-*Same SoM + Florence pipeline under both models — the only change is the driver
-LLM. A weak VLM (gpt-4o-mini) barely exploits the grounded boxes; gpt-4o turns
-them into a +25% win. **The icon bottleneck is VLM-bound, not pipeline-bound.***
+*同一套 SoM + Florence 管线，唯一变量是驱动 LLM。弱 VLM (gpt-4o-mini) 几乎无法利用
+grounded boxes；gpt-4o 将其转化为 +25% 增益。**瓶颈是 VLM，不是管线。***
 
 ---
 
-## 🎯 Motivation / 为什么需要这个项目
+## 🎯 为什么需要这个项目
 
-Modern browser agents (browser-use, Playwright agents, etc.) rely on DOM parsing
-to understand web pages. This works well for semantic HTML — buttons with labels,
-links with text. But it **breaks down** on:
+现代浏览器 Agent 依赖 DOM 解析理解页面。但以下场景 DOM 无能为力：
 
-| Scenario | DOM-only Agent | Vision-Enhanced Agent |
-|----------|:-:|:-:|
-| Icon-only buttons (no text/aria labels) | ❌ Cannot distinguish | ✅ Identifies by visual shape |
-| Color swatches / visual selectors | ❌ No color awareness | ✅ Recognizes by appearance |
-| Canvas / SVG rendered content | ❌ Invisible to DOM | ✅ OCR + region detection |
-| Dynamic SPA (lazy-loaded content) | ⚠️ May act too early | ✅ Visually confirms content |
-
-现代浏览器 Agent 依赖 DOM 解析理解页面。但在纯图标按钮、颜色选择器、Canvas 渲染内容等场景下，
-DOM 无法提供足够信息。本项目通过视觉模型弥补这一缺陷。
+| 场景 | 纯 DOM Agent | 视觉增强 Agent |
+|------|:-:|:-:|
+| 纯图标按钮（无文本/aria 标签） | ❌ 无法区分 | ✅ 通过视觉形状识别 |
+| 颜色选择器 / 视觉选择器 | ❌ 无颜色感知 | ✅ 通过外观识别 |
+| Canvas / SVG 渲染内容 | ❌ DOM 不可见 | ✅ OCR + 区域检测 |
+| 动态 SPA（懒加载内容） | ⚠️ 可能提前行动 | ✅ 视觉确认内容就绪 |
 
 ---
 
-## ✨ Key Results / 核心效果
+## ✨ 核心结果
 
-> **Every success rate below comes from _objective verification_** — the DOM
-> state, the page URL, or a live ground-truth API is checked _after_ the agent
-> finishes. Success is **never** the agent self-reporting `done()`. See
-> [Success Methodology](#-success-methodology--成功判定方法论) for why this matters.
+> **以下所有成功率均来自客观校验**——Agent 完成后检查真实 DOM 状态、页面 URL 或
+> 实时 ground-truth API。成功**绝非** Agent 自报 `done()`。
 
-### Best result (gpt-4o): vision rescues icon-only UIs
+### 最佳结果 (gpt-4o)：视觉救回纯图标 UI
 
-With **gpt-4o** as the driver LLM, the vision pipeline turns the category DOM
-parsing fails on — icon-only buttons — from a near-total miss into a near-solve,
-and lifts overall objective success well past the DOM-only baseline:
-
-| Metric | Baseline (DOM-only) | **+ Full Vision** |
+| 指标 | 基线 (纯 DOM) | **+ 全视觉** |
 |---|:-:|:-:|
-| **Overall** (16 tasks) | 11/16 (69%) | **15/16 (94%)** |
-| **icon-heavy** (4 tasks) | **0/4 (0%)** | **3/4 (75%)** |
-| mixed (5 tasks) | 4/5 (80%) | **5/5 (100%)** |
-| dom-rich (7 tasks) | 7/7 (100%) | 7/7 (100%) |
+| **总体** (16 任务) | 11/16 (69%) | **15/16 (94%)** |
+| **icon-heavy** (4 任务) | **0/4 (0%)** | **3/4 (75%)** |
+| mixed (5 任务) | 4/5 (80%) | **5/5 (100%)** |
+| dom-rich (7 任务) | 7/7 (100%) | 7/7 (100%) |
 
-That's **+25% overall**, driven entirely by the icon-heavy category — exactly
-where pixels beat the DOM. (Data: [`ablation_report_gpt-4o.md`](output/benchmark_results/ablation_report_gpt-4o.md).)
+**整体 +25%**，完全由 icon-heavy 类别驱动——像素胜过 DOM 的精确场景。
 
-### Why this is the headline: vision's value scales with the VLM
+### 核心发现：视觉的价值随 VLM 能力扩展
 
-Re-running the *same* 6-condition ablation (same SoM + Florence + vision→DOM
-bridge, same tasks, same objective verifiers) on **gpt-4o-mini** vs **gpt-4o**
-shows the payoff is gated by the driver LLM's ability to *reason over* the
-grounded elements — not by the grounding plumbing:
+同一套消融实验（6 条件、同一 SoM + Florence + 视觉→DOM 桥、相同任务和校验器），
+`gpt-4o-mini` vs `gpt-4o`：
 
-| Metric | gpt-4o-mini (cost default) | **gpt-4o (best)** |
+| 指标 | gpt-4o-mini（成本默认） | **gpt-4o（最佳）** |
 |---|:-:|:-:|
-| Baseline (pure DOM) | 11/16 (69%) | 11/16 (69%) |
-| Full vision (best of C/D/E) | 12/16 (75%) | **15/16 (94%)** |
-| Full-vision gain over baseline | +6% | **+25%** |
-| **icon-heavy**: baseline → full vision | 1/4 → 2/4 | **0/4 → 3/4** |
-| Adaptive (E) vision calls vs full | 15 vs 35 | 20 vs 37 |
+| 基线 (纯 DOM) | 11/16 (69%) | 11/16 (69%) |
+| 全视觉 (最强条件) | 12/16 (75%) | **15/16 (94%)** |
+| 全视觉增益 | +6% | **+25%** |
+| **icon-heavy**: 基线 → 全视觉 | 1/4 → 2/4 | **0/4 → 3/4** |
+| 自适应 (E) 视觉调用 vs 全量 | 15 vs 35 | 20 vs 37 |
 
-Both models share an **identical 69% DOM-only baseline** — the entire +25% gap is
-the strong VLM *using* boxes the weak one ignores. **The gpt-4o-mini ceiling was
-the VLM's reasoning over grounded boxes, not Florence's grounding.** Adaptive (E)
-still matches full vision at ~half the vision calls under both models.
+两个模型共享**相同的 69% 纯 DOM 基线**——+25% 的差距完全来自强 VLM *利用*了弱 VLM 忽略的 grounded boxes。
 
-### gpt-4o-mini as the cost-efficient default
+### gpt-4o-mini 作为低成本默认
 
-The code and examples default to **gpt-4o-mini** because it is cheap to run.
-There the headline win is smaller — full vision lifts overall success **+6%**
-(75% vs 69%) and doubles icon-heavy (1/4 → 2/4) — and the adaptive gate **ties
-the baseline overall** rather than beating it, because full vision's *own*
-ceiling is modest with this weaker VLM (little headroom to capture). Even so, on
-the category that needs pixels, adaptive matches full vision at a fraction of the
-cost. Swap in gpt-4o and the same gate beats baseline by +25%.
-
-> **Honest caveats** (the kind a self-report metric would have hidden):
-> - The icon bottleneck is **VLM-bound, not pipeline-bound.** Three successive
->   levers aimed at it — **(1)** the SoM bbox fix (prefer `bounds` over the
->   always-zero `clientRects.x/y` in browser-use 0.12.x), **(2)** a vision→DOM
->   bridge that matches vision detections back to clickable `[id]`s by
->   IoU/center-containment, and **(3)** Florence-2 `<CAPTION_TO_PHRASE_GROUNDING>`
->   fed the task phrase — did *not* move icon-heavy under gpt-4o-mini (a curl
->   smoke gate showed Florence grounds a phrase only to *region* granularity:
->   "Next Track button" → whole player card, never the small icon). Swapping in a
->   stronger VLM (gpt-4o) lifted icon-heavy from 0/4 to 3/4 with the **same**
->   Florence grounding. So the real next lever is a more capable multimodal driver
->   LLM (and/or a stronger grounding backend like OmniParser / GroundingDINO for
->   the last icon), not more plumbing on Florence-2.
-> - An earlier release had the adaptive gate genuinely broken — it read a
->   truncated object repr instead of the real DOM and fired vision on only 4/16
->   tasks; that wiring + heuristic bug is now fixed and unit-tested.
-> - SoM annotation only pays off **paired with vision**: SoM-alone ≈ baseline
->   (−6%), but adaptive-with-SoM beats adaptive-without-SoM by +13% (69% vs 56%).
-> - Single-run numbers vary due to LLM non-determinism and network timeouts; no
->   single run is treated as definitive.
+代码和示例默认使用 gpt-4o-mini（便宜）。该模型下全视觉增益较小（+6%），
+自适应门控与基线持平——但在需要像素的类别上，自适应以 43% 的视觉预算追平了全视觉。
+换成 gpt-4o 同一门控即超越基线 +25%。
 
 ---
 
-## 🏗️ Architecture / 系统架构
+## 🏗️ 系统架构
 
 ```mermaid
 flowchart TB
-    subgraph agent["VisionEnhancedAgent — inherits browser_use.Agent (zero-invasive)"]
+    subgraph agent["VisionEnhancedAgent — 继承 browser_use.Agent（零侵入）"]
         direction TB
-        dom["DOM state<br/>(from browser-use)"]
-        gate{"Adaptive gate<br/>DOM confidence score<br/>SKIP · LIGHTWEIGHT · FULL"}
-        som["SoM annotator<br/>numbered bounding boxes"]
-        flo["Florence-2<br/>OCR + region caption"]
-        bridge["Vision → DOM bridge<br/>match boxes back to clickable [id]"]
-        ctx["Enriched page context<br/>• numbered elements + boxes<br/>• OCR text from non-DOM content<br/>• region captions (colors, icons)"]
-        llm["LLM decision maker<br/>gpt-4o-mini default · gpt-4o best"]
-        act["browser-use action<br/>click · type · scroll · done"]
+        dom["DOM 状态<br/>(来自 browser-use)"]
+        gate{"自适应门控<br/>DOM 置信度评分<br/>SKIP · LIGHTWEIGHT · FULL"}
+        som["SoM 标注器<br/>编号边界框"]
+        flo["Florence-2<br/>OCR + 区域描述"]
+        bridge["视觉 → DOM 桥<br/>将检测框匹配回可点击 [id]"]
+        ctx["增强页面上下文<br/>• 编号元素 + 边界框<br/>• 非 DOM 渲染文本 (OCR)<br/>• 区域描述 (颜色、图标)"]
+        llm["LLM 决策器<br/>gpt-4o-mini 默认 · gpt-4o 最佳"]
+        act["browser-use 动作<br/>click · type · scroll · done"]
 
         dom --> gate
-        gate -->|"high confidence → skip vision"| ctx
-        gate -->|"low → run vision"| som
+        gate -->|"高置信度 → 跳过视觉"| ctx
+        gate -->|"低 → 启动视觉"| som
         som --> flo --> bridge --> ctx
         ctx --> llm --> act
     end
@@ -164,132 +115,57 @@ flowchart TB
     class api gpu
 ```
 
-**Key Design**: The entire module is a _non-invasive overlay_ —
-`VisionEnhancedAgent` inherits from `browser_use.Agent` without modifying
-a single line in the upstream repository.
-`pip install --upgrade browser-use` won't break anything.
-
-关键设计：整个模块是**无侵入扩展**——`VisionEnhancedAgent` 通过类继承
-`browser_use.Agent`，不修改上游任何一行代码。
+**关键设计**：整个模块是**无侵入扩展**——`VisionEnhancedAgent` 通过类继承
+`browser_use.Agent`，不修改上游任何一行代码。`pip install --upgrade browser-use` 不会有任何影响。
 
 ---
 
-## 📁 Project Structure / 项目结构
+## 🚀 快速开始
 
-```
-browser-use-vision/
-├── browser_use_vision/             # Core package (1,797 lines)
-│   ├── enhanced_agent.py           # VisionEnhancedAgent — main entry point
-│   ├── som.py                      # Set-of-Mark screenshot annotation
-│   ├── grounding/                  # Vision backends
-│   │   ├── base.py                 # Abstract VisualGroundingBackend
-│   │   ├── florence.py             # Florence-2 backend (OCR + regions)
-│   │   └── omniparser.py          # OmniParser V2 backend [experimental]
-│   ├── adaptive/                   # Adaptive vision strategy
-│   │   └── __init__.py             # DOM confidence evaluator + strategy
-│   ├── server.py                   # FastAPI vision inference server
-│   └── config.py                   # Configuration management
-│
-├── tests/                          # Test suite (119 tests)
-│   ├── test_som.py                 # SoM annotation tests (24 tests)
-│   ├── test_enhanced_agent.py      # Enhanced agent tests
-│   ├── test_grounding.py           # Grounding module tests
-│   ├── test_adaptive.py            # Adaptive strategy tests
-│   └── test_benchmark_verify.py    # Objective verifier tests (31 tests)
-│
-├── scripts/                        # Demo & evaluation scripts
-│   ├── benchmark_common.py         # ★ Tasks + verifiers + run engine (single source)
-│   ├── e2e_test.py                 # E2E integration test runner (3 scenarios)
-│   ├── real_world_benchmark.py     # Baseline vs Vision (16 tasks)
-│   ├── ablation_benchmark.py       # Ablation study runner (6 conditions)
-│   ├── demo_icon_only.py           # Baseline vs Vision comparison demo
-│   └── ...                         # Other demo/test scripts
-│
-├── demo/                           # HTML test fixtures
-│   ├── icon_only_player.html       # SVG icon-only music player
-│   ├── dynamic_spa.html            # Dynamic content dashboard
-│   ├── color_picker.html           # Visual color swatch picker
-│   └── ...                         # Additional test pages
-│
-├── output/                         # Test results & reports
-│   ├── benchmark_results/          # ★ Primary evidence
-│   │   ├── real_world_results.json # Machine-readable benchmark (16 tasks)
-│   │   ├── ablation_results.json   # Ablation study data (6×16 runs)
-│   │   └── ablation_report.md      # Ablation study report
-│   ├── demo_results/               # Early-stage demo artifacts (single-task)
-│   └── e2e_results/                # E2E integration test results
-│
-├── .github/workflows/tests.yml     # CI: lint + unit tests
-├── pyproject.toml                  # Project config & dependencies
-└── README.md
-```
+### 60 秒看它工作（无需 GPU）
 
----
-
-## 🚀 Quick Start / 快速开始
-
-### See it work in 60 seconds (no GPU required)
-
-The two images at the top of this README are **regenerated locally with no GPU
-and no vision server** — Set-of-Mark annotation is pure DOM-geometry + Pillow
-drawing, and the results chart reads the committed benchmark JSON:
+README 顶部的两张图可以在**本地无 GPU、无视觉服务器**的情况下重新生成：
 
 ```bash
 pip install -e ".[dev]"
 
-# 1. Serve the local HTML fixtures
+# 1. 启动本地 HTML fixture 服务
 python3 -m http.server 8088 --directory demo/ &
 
-# 2. Regenerate the SoM hero image (DOM-only vs numbered clickable elements)
+# 2. 重新生成 SoM hero 图
 python scripts/make_hero_image.py \
   --url http://localhost:8088/icon_only_player.html \
   --out docs/assets/som_icons.png
 
-# 3. Regenerate the results chart from the committed ablation JSONs
+# 3. 从已提交的消融 JSON 重新生成结果图表
 python3 scripts/make_results_chart.py   # → docs/assets/results.png
 ```
 
-No CUDA, no Florence server, no API key. The **full** vision pipeline (live agent
-runs) needs the GPU vision server below.
+无需 CUDA、无需 Florence 服务器、无需 API key。**完整**视觉管线（实时 Agent 运行）
+需要下面的 GPU 视觉服务器。
 
-### Prerequisites
-
-- Python ≥ 3.11
-- CUDA GPU (for Florence-2 inference server)
-- OpenAI API key (or compatible LLM endpoint)
-
-### Installation
+### 安装
 
 ```bash
 git clone https://github.com/Raidriar7170/browser-use-vision.git
 cd browser-use-vision
-
-python -m venv .venv
-source .venv/bin/activate
-
 pip install -e ".[dev]"
 playwright install chromium
 ```
 
-### 1. Start the Vision API Server (on GPU machine)
+### 1. 启动 Vision API Server（GPU 机器）
 
 ```bash
-# On a machine with GPU (e.g., A100)
 pip install torch transformers
 python -m browser_use_vision.server --port 8100
-
-# Health check
 curl http://localhost:8100/health
 # → {"status": "ok", "backend": "FlorenceBackend"}
 ```
 
-The server loads Florence-2-large (~3GB) and exposes endpoints:
-- `POST /ocr` — OCR with region coordinates
-- `POST /regions` — Dense region captioning
-- `POST /detect` — Object detection
-- `POST /describe` — Region description by text query
+服务器加载 Florence-2-large (~3GB)，暴露端点：
+`/ocr` · `/regions` · `/detect` · `/describe`
 
-### 2. Use VisionEnhancedAgent
+### 2. 使用 VisionEnhancedAgent
 
 ```python
 import asyncio
@@ -307,8 +183,8 @@ async def main():
         browser_session=session,
         vision_backend=backend,
         use_vision=True,
-        enable_som=True,        # Set-of-Mark annotation
-        enable_adaptive=False,  # Force vision every step
+        enable_som=True,
+        enable_adaptive=False,
     )
 
     history = await agent.run()
@@ -317,300 +193,140 @@ async def main():
 asyncio.run(main())
 ```
 
-### 3. Run Tests
+### 3. 运行测试
 
 ```bash
-# Unit tests (119 tests)
-pytest tests/ -v
-
-# With coverage report
+pytest tests/ -v              # 140 单元测试
 pytest tests/ --cov=browser_use_vision --cov-report=term-missing
-
-# E2E integration tests (requires Vision API + HTTP server)
-python scripts/e2e_test.py
-
-# Single scenario
-python scripts/e2e_test.py --scenario icon_only
+python scripts/e2e_test.py    # E2E 集成测试（需 Vision API）
 ```
-
-**Test Coverage** (core logic modules):
-
-| Module | Coverage | Notes |
-|--------|----------|-------|
-| `adaptive/` | 95% | DOM confidence scoring + strategy |
-| `som.py` | 90% | Set-of-Mark screenshot annotation |
-| `enhanced_agent.py` | 67% | Core agent (format/enrich/stats) |
-| `grounding/__init__.py` | 63% | Abstract base + DetectedElement |
-| `florence.py` | — | Requires live API (tested via E2E) |
-| `server.py` | — | Runtime only (tested via E2E) |
 
 ---
 
-## 🔬 Technical Details / 技术细节
+## 🔬 技术细节
 
-### 1. SoM (Set-of-Mark) Annotation
+### 1. SoM (Set-of-Mark) 标注
 
-The SoM module overlays numbered labels on interactive elements in the screenshot
-before sending it to the LLM. This gives the LLM a visual "index" to reference
-when deciding which element to click.
+在截图上为交互元素叠加编号标签，让 LLM 在决策时有视觉参照索引。
+纯 DOM 几何 + Pillow 绘制，**不需要 GPU**。
 
-SoM 模块在截图上为交互元素标注编号标签，让 LLM 在决策时有视觉参照。
+### 2. Florence-2 视觉后端
 
-```python
-from browser_use_vision.som import SoMAnnotator
+[Florence-2](https://huggingface.co/microsoft/Florence-2-large)（微软）统一视觉基础模型：
+- **`OCR_WITH_REGION`** — 提取渲染文本 + 边界框坐标（读取 Canvas/SVG/自定义字体）
+- **`DENSE_REGION_CAPTION`** — 为检测到的区域生成描述（识别图标、颜色、形状）
 
-annotator = SoMAnnotator()
-annotated_image = annotator.annotate(screenshot, interactive_elements)
-# → Screenshot with [0], [1], [2]... labels on buttons/links/inputs
-```
+### 3. 自适应视觉策略
 
-### 2. Florence-2 Vision Backend
-
-[Florence-2](https://huggingface.co/microsoft/Florence-2-large) (Microsoft)
-is a unified vision foundation model. We use two key capabilities:
-
-- **`OCR_WITH_REGION`** — Extracts text with bounding box coordinates from
-  screenshots. Critical for reading text rendered in Canvas, SVG, or custom
-  fonts that DOM cannot access.
-- **`DENSE_REGION_CAPTION`** — Generates descriptions for all detected regions.
-  Identifies icons, colors, shapes — exactly what DOM-only agents miss.
-  *Disabled by default* to save GPU time; under objective verification the
-  ablation shows OCR+Region and OCR-only are within run-to-run noise of each
-  other (C 12/16 vs D 11/16). Enable with `enable_dense_caption=True`.
-
-Florence-2（微软）是统一视觉基础模型。我们用 OCR_WITH_REGION 提取渲染文本坐标，
-用 DENSE_REGION_CAPTION 识别图标、颜色、形状。
-
-### 3. Adaptive Vision Strategy
-
-Not every page needs expensive vision inference. The adaptive strategy evaluates
-the **serialized DOM** (browser-use's indexed `[id]<tag ...>` representation) first:
+不是每个页面都需要昂贵的视觉推理。自适应策略先评估序列化 DOM：
 
 ```
-DOM Confidence Score (0-1):
-  → High (≥0.8): interactive elements carry text/aria/alt labels → Skip vision
-  → Medium (0.5-0.8): some labeled, some bare → LIGHTWEIGHT (OCR only)
-  → Low (<0.5): icon-only buttons, collapsed <svg>, no readable labels → FULL vision
-  (consecutive failures or a detected loop force FULL regardless of score)
+DOM 置信度评分 (0-1):
+  → 高 (≥0.8): 交互元素有文本/aria/alt 标签 → 跳过视觉
+  → 中 (0.5-0.8): 部分有标签、部分空白 → LIGHTWEIGHT（仅 OCR）
+  → 低 (<0.5): 纯图标按钮、折叠 <svg>、无可读标签 → FULL 视觉
+  (连续失败或检测到循环强制 FULL)
 ```
 
-The score is `0.4 + 0.6 × (labeled ÷ total_interactive)`, minus a small penalty for
-collapsed `<svg>`. An element counts as *labeled* if it carries an `aria-label` / `alt`
-/ `title` / `placeholder` / `value` / `type` / `compound_components` attribute, **or**
-has a readable text child on the next indented line; otherwise it is *icon-only*.
-Decorative `<i>` glyphs (e.g. rating stars) are excluded so they don't drag text-rich
-pages down. An empty string (DOM unreadable) scores low so the gate prefers vision
-rather than wrongly skipping.
-
-> **Validated in the objective ablation:** across the 16-task suite the adaptive
-> agent fires vision on **15 calls (43% of always-on's 35)** — concentrated on
-> icon/visual pages and skipped on text-rich ones — and **matches full vision on
-> icon-heavy (2/4 = 2/4)**, the category where vision actually helps. (A previous
-> release had this gate broken: it assessed a truncated object repr instead of the
-> real serialized DOM and degenerated to always-skip / baseline accuracy. The
-> wiring and the index-format heuristic are now fixed and unit-tested.)
+评分公式：`0.4 + 0.6 × (labeled ÷ total_interactive)`，减去折叠 `<svg>` 的小惩罚。
 
 ### 4. VisionEnhancedAgent
 
-Non-invasive extension of `browser_use.Agent`:
+`browser_use.Agent` 的无侵入子类扩展：
 
-```python
-class VisionEnhancedAgent(Agent):
-    """
-    Overrides multi_act() to inject vision grounding into
-    the LLM context before each decision step.
-
-    Pipeline per step:
-      1. Take screenshot
-      2. SoM: annotate interactive elements with numbered labels
-      3. Florence-2: OCR + region detection on screenshot
-      4. Merge: combine DOM tree + visual descriptions
-      5. LLM: decide action with enriched context
-      6. Execute: browser-use action (click, type, etc.)
-    """
+```
+每步管线：
+  1. 截图
+  2. SoM: 为交互元素标注编号
+  3. Florence-2: OCR + 区域检测
+  4. 合并: DOM 树 + 视觉描述
+  5. LLM: 用增强上下文决策动作
+  6. 执行: browser-use 动作 (click, type, etc.)
 ```
 
 ---
 
-## 🔬 Success Methodology / 成功判定方法论
+## 🔬 成功判定方法论
 
-Earlier versions of this benchmark scored a task as "passed" whenever the agent
-called `done()` and stopped under the step limit — i.e. the agent **graded its
-own homework**. That inflates numbers: an agent routinely reports *"Successfully
-clicked the Next Track button"* while the DOM shows nothing changed.
+早期版本用 Agent 调用 `done()` 作为成功标志——Agent 自己给自己打分。
+这会虚高数字：Agent 经常报告"成功点击 Next Track 按钮"但 DOM 实际无变化。
 
-Every benchmark in this repo now uses **objective verification**. After
-`agent.run()` finishes, a per-task `verify(page, final_result)` callable inspects
-the real post-run state:
+本仓库所有 benchmark 使用**客观校验**。`agent.run()` 完成后，per-task
+`verify(page, final_result)` 检查真实的 post-run 状态：
 
-| Verifier | Checks | Used for |
-|----------|--------|----------|
-| `dom_js(expr)` | a JS expression is truthy in the live page | action tasks (clicks, toggles, selections) |
-| `url_has(*subs)` | the final URL contains substrings | navigation tasks |
-| `text_has(*subs)` | the agent's answer contains expected text | static extraction tasks |
-| `live_hn_top()` | answer matches the current #1 Hacker News story via the official Firebase API | dynamic extraction |
+| 校验器 | 检查内容 | 用途 |
+|--------|---------|------|
+| `dom_js(expr)` | 活页面中 JS 表达式为 truthy | 动作类任务 |
+| `url_has(*subs)` | 最终 URL 包含子串 | 导航任务 |
+| `text_has(*subs)` | Agent 答案包含预期文本 | 静态提取任务 |
+| `live_hn_top()` | 答案匹配 Hacker News 实时 #1（Firebase API） | 动态提取 |
 
-`is_done` and step count are still recorded — but only for analysis, never as
-the success signal. The verifiers are unit-tested independently of any browser
-([`tests/test_benchmark_verify.py`](tests/test_benchmark_verify.py), 31 cases),
-and all task definitions, verifiers, and the run engine live in one place
-([`scripts/benchmark_common.py`](scripts/benchmark_common.py)).
-
-**Task suite: 16 tasks** — 6 local icon-only fixtures (where vision matters most)
-+ 10 public sites (Wikipedia, Hacker News, arXiv, quotes/books.toscrape.com,
-the-internet.herokuapp.com), real sites in the majority.
+任务集：**16 个任务**——6 个本地纯图标 fixture + 10 个公开网站
+(Wikipedia, Hacker News, arXiv, toscrape.com, the-internet.herokuapp.com)。
 
 ---
 
-## 📊 Performance / 性能
+## 📊 消融实验 (6 条件 × 16 任务 = 96 次运行)
 
-> All numbers below are **objective-verification** success rates (DOM / URL /
-> live API), not agent self-report. Model gpt-4o-mini, headless Chromium,
-> Florence-2 on a remote GPU.
+| 条件 | 描述 | 成功率 | 平均步数 | 视觉调用 |
+|------|------|:----:|:------:|:-------:|
+| A. 基线 | 纯 DOM，无视觉，无 SoM | 11/16 (69%) | 1.7 | 0 |
+| B. 仅 SoM | SoM 标注，无视觉模型 | 10/16 (62%) | 2.4 | 0 |
+| **C. 全视觉** | **OCR + 区域描述每步** | **12/16 (75%)** | 2.3 | 35 |
+| D. 仅 OCR | 每步仅 OCR，无区域描述 | 11/16 (69%) | 2.3 | 36 |
+| **E. 自适应** | **SoM + DOM 门控视觉（默认配置）** | 11/16 (69%) | 2.3 | **15** |
+| F. 无 SoM 自适应 | 自适应视觉，无 SoM | 9/16 (56%) | 1.4 | 9 |
 
-### One suite, one scoreboard
-
-All numbers below come from the **same 16 tasks**. The **ablation study** is the
-canonical evaluation — it runs every task under all six conditions, so the
-DOM-only baseline (condition **A**, 69%), the default adaptive agent (condition
-**E**, 69%), and forced full vision (condition **C**, 75% on gpt-4o-mini / **94%
-on gpt-4o**) are all measured on one identical suite. There is no second,
-competing scoreboard.
-
-> A separate single-pass head-to-head (default adaptive agent vs. baseline) is
-> archived in [`real_world_results.json`](output/benchmark_results/real_world_results.json),
-> but its baseline is noisier — several failures are `0 steps / 125s` infra
-> timeouts (page-load/LLM latency, not capability). That contamination is exactly
-> why the controlled ablation below, not any single pass, is the headline.
-
-### Ablation Study (6 conditions × 16 tasks = 96 runs)
-
-Systematically disabling each component to measure its individual contribution.
-
-| Condition | Description | Success Rate | Avg Steps | Vision Calls |
-|-----------|-------------|:----------:|:---------:|:------------:|
-| A. Baseline | Pure DOM, no vision, no SoM | 11/16 (69%) | 1.7 | 0 |
-| B. SoM Only | SoM annotation, no vision model | 10/16 (62%) | 2.4 | 0 |
-| **C. Full Always** | **OCR + Region Caption every step** | **12/16 (75%)** | 2.3 | 35 |
-| D. OCR Only | OCR every step, no Region Caption | 11/16 (69%) | 2.3 | 36 |
-| **E. Adaptive Full** | **SoM + DOM-gated vision (default config)** | 11/16 (69%) | 2.3 | **15** |
-| F. Adaptive No SoM | Adaptive vision, no SoM | 9/16 (56%) | 1.4 | 9 |
-
-**Key findings (objective verification overturns the old self-report story):**
-
-| Comparison | Delta | Insight |
-|------------|:-----:|---------|
-| C vs A | **+6%** | Full vision is the strongest config (75% vs 69%); the gain lands on icon-heavy (25%→50%) |
-| C vs D | 0 (+6%/−6% noise) | Region Caption vs OCR-only is within run-to-run noise — no clear winner |
-| **E: 15 vs 35 calls** | **43% budget** | Adaptive gate fires vision on icon/visual pages, skips text pages — and **matches C on icon-heavy (2/4)** |
-| E vs F | **+13%** | SoM *paired with vision* helps (69% vs 56%); SoM alone (B vs A, −6%) does not |
-
-**By category** — the signal is concentrated where DOM genuinely fails:
-
-| Category | Baseline (A) | Full Vision (C) | Adaptive (E) |
-|----------|:----------:|:---------------:|:------------:|
-| icon-heavy (4 tasks) | 25% | **50%** | **50%** |
-| mixed (5 tasks) | 80% | 80% | 60% |
-| dom-rich (7 tasks) | 86% | 86% | 86% |
-
-> **Note on a prior broken gate:** an earlier report claimed "adaptive matches
-> full vision" while the gate was in fact firing on only 4/16 tasks (it read a
-> truncated object repr). After fixing the wiring and heuristic, the gate now
-> genuinely targets vision — **15 calls (43% of always-on)**, matching full
-> vision on icon-heavy at a fraction of the cost. (Full vision's modest +6%
-> ceiling here is a gpt-4o-mini limit, not a gate one — see the cross-model
-> section above.)
->
-> Raw data: [`output/benchmark_results/ablation_results.json`](output/benchmark_results/ablation_results.json)
-> | Report: [`output/benchmark_results/ablation_report.md`](output/benchmark_results/ablation_report.md)
-
-### Latency
-
-| Metric | Value |
-|--------|-------|
-| Florence-2 OCR latency | ~1.0s / call (A100) |
-| Florence-2 region detection | ~0.5s / call (A100) |
-| SoM annotation overhead | < 50ms |
-| End-to-end step time (with vision) | ~10s (including LLM) |
-| Unit tests | 119 passing |
-| E2E scenarios | 3/3 passing |
+数据：[`ablation_results.json`](output/benchmark_results/ablation_results.json)
+| 报告：[`ablation_report.md`](output/benchmark_results/ablation_report.md)
+| gpt-4o 报告：[`ablation_report_gpt-4o.md`](output/benchmark_results/ablation_report_gpt-4o.md)
 
 ---
 
-## 🛠️ Tech Stack / 技术栈
+## 🛠️ 技术栈
 
-| Component | Technology | Purpose |
+| 组件 | 技术 | 用途 |
 |---|---|---|
-| Core Runtime | Python 3.11 | Language |
-| Browser Agent | browser-use 0.12.9 | Upstream agent framework |
-| Browser Engine | Playwright + Chromium | Browser automation |
-| Vision Model | Florence-2-large (Microsoft) | OCR, region detection, captioning |
-| Vision API | FastAPI + Uvicorn | GPU inference server |
-| LLM | GPT-4o-mini (via OpenAI API) | Agent decision making |
-| Deep Learning | PyTorch 2.1 + transformers | Model inference |
-| Data Models | Pydantic v2 | Schema validation |
-| Testing | pytest + pytest-asyncio | Unit & integration tests |
-| CI/CD | GitHub Actions | Automated test pipeline |
-| Image Processing | Pillow | Screenshot manipulation |
+| 核心运行时 | Python 3.11 | 语言 |
+| 浏览器 Agent | browser-use 0.12.9 | 上游 Agent 框架 |
+| 浏览器引擎 | Playwright + Chromium | 浏览器自动化 |
+| 视觉模型 | Florence-2-large (Microsoft) | OCR、区域检测、描述 |
+| 视觉 API | FastAPI + Uvicorn | GPU 推理服务 |
+| LLM | GPT-4o-mini (via OpenAI API) | Agent 决策 |
+| 深度学习 | PyTorch 2.1 + transformers | 模型推理 |
+| 数据模型 | Pydantic v2 | Schema 校验 |
+| 测试 | pytest + pytest-asyncio | 单元与集成测试 |
+| CI/CD | GitHub Actions | 自动化测试流水线 |
+| 图像处理 | Pillow | 截图处理 |
 
 ---
 
-## 🗺️ Roadmap
+## 🗺️ 路线图
 
-- [x] Florence-2 vision backend with OCR + region detection
-- [x] SoM (Set-of-Mark) screenshot annotation
-- [x] Adaptive vision strategy (DOM confidence scoring)
-- [x] E2E integration tests with HTML fixtures
-- [x] CI pipeline (GitHub Actions) — 119 unit tests
-- [x] **Objective success verification** (DOM / URL / live API, not agent self-report)
-- [x] Real-world benchmark (16 tasks) + ablation study (6 conditions × 16 tasks)
-- [x] **Fix + re-tune adaptive vision gate** — read real serialized DOM, score the
-      indexed format; now fires 15/35 vision calls, matching full vision on icon-heavy
-- [~] OmniParser V2 backend (code complete, needs integration testing)
-- [ ] GroundingDINO as alternative detection backend
-- [ ] **Learn the gate threshold from agent traces** — current thresholds are
-      hand-set; close the residual icon-grounding gap (2 fixtures resist even full vision)
-- [ ] Benchmark against WebArena / Mind2Web evaluation suites
-- [ ] Video stream mode for real-time agent observation
+- [x] Florence-2 视觉后端（OCR + 区域检测）
+- [x] SoM (Set-of-Mark) 截图标注
+- [x] 自适应视觉策略（DOM 置信度评分）
+- [x] E2E 集成测试 + HTML fixtures
+- [x] CI 流水线（GitHub Actions）— 140 单元测试
+- [x] **客观成功校验**（DOM / URL / 实时 API，非 Agent 自报）
+- [x] 16 任务 benchmark + 消融实验（6 条件 × 16 任务）
+- [x] **修复 + 重调自适应视觉门控**
+- [~] OmniParser V2 后端（代码完成，待集成测试）
+- [ ] GroundingDINO 作为替代检测后端
+- [ ] 从 Agent trace 学习门控阈值
+- [ ] 对标 WebArena / Mind2Web 评测
+- [ ] 视频流模式（实时 Agent 观测）
 
 ---
 
-## 📄 License
+## 📄 许可证
 
-MIT License. See [LICENSE](LICENSE) for details.
+MIT License. 详见 [LICENSE](LICENSE)。
 
 ---
 
-## 📌 Project Summary / 项目总结
+## 📌 项目总结
 
-> **For Recruiters & Hiring Managers:**
->
-> This project demonstrates end-to-end engineering skills in building a
-> **production-grade ML-powered browser agent enhancement**:
->
-> - **Systems Design** — Architected a modular, non-invasive plugin for a
->   popular open-source framework (94k ⭐), using clean class inheritance
->   — zero upstream modifications
-> - **ML Engineering** — Deployed Florence-2 vision foundation model as a
->   GPU inference service; designed SoM (Set-of-Mark) annotation pipeline
->   for visual grounding
-> - **Performance Optimization** — Adaptive inference gates vision on rule-based
->   DOM-confidence scoring of browser-use's indexed serialization: **15 vision
->   calls vs 35 for always-on (43% of the budget), matching full vision on the
->   icon-heavy category (2/4) where it actually helps**
-> - **Quantitative Results** — Evaluated on 16 tasks with **objective
->   verification** (DOM / URL / live API, not agent self-report): with **gpt-4o**
->   the vision pipeline reaches **94% (15/16) vs 69% baseline (+25%)** and rescues
->   icon-only UIs **0/4 → 3/4**. The same pipeline on the cheaper gpt-4o-mini
->   default still beats baseline (+6%) — vision's value scales with VLM strength.
->   Ablation (6 conditions × 16 tasks, two models) isolates each component's real
->   contribution and overturns earlier self-reported claims.
->   119 unit tests + 3 E2E integration scenarios (all passing)
-> - **Software Engineering** — 1,800-line core module, 119 unit tests,
->   3 E2E integration tests, CI pipeline, typed Python codebase
->
-> ---
->
 > **面向招聘者：**
 >
 > 本项目展示了构建**生产级 ML 浏览器 Agent 增强系统**的全栈工程能力：
@@ -626,6 +342,6 @@ MIT License. See [LICENSE](LICENSE) for details.
 >   并将纯图标 UI 从 **0/4 救回 3/4**；在更便宜的 gpt-4o-mini 默认模型上同一
 >   管线仍优于基线（+6%）——视觉的价值随 VLM 能力扩展。消融实验（6 条件 ×
 >   16 任务、两个模型）量化各组件真实贡献，并推翻了早期自报指标的结论。
->   含 119 单元测试 + 3 个 E2E 集成场景（全部通过）
-> - **工程规范** — 1800 行核心模块、119 单元测试、3 个 E2E 集成测试、
+>   含 140 单元测试 + 3 个 E2E 集成场景（全部通过）
+> - **工程规范** — 1800 行核心模块、140 单元测试、3 个 E2E 集成测试、
 >   CI 流水线、类型化 Python 代码
