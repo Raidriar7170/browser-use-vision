@@ -7,7 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 
-**为 [browser-use](https://github.com/browser-use/browser-use)（⭐ 94k）浏览器 Agent 框架提供视觉 Grounding 增强插件——让 Agent 不仅能读 DOM，还能"看见"页面。**
+**为热门开源 [browser-use](https://github.com/browser-use/browser-use) 浏览器 Agent 框架提供视觉 Grounding 增强插件——让 Agent 不仅能读 DOM，还能"看见"页面。**
 
 ---
 
@@ -329,9 +329,9 @@ MIT License. 详见 [LICENSE](LICENSE)。
 
 > **面向招聘者：**
 >
-> 本项目展示了构建**生产级 ML 浏览器 Agent 增强系统**的全栈工程能力：
+> 本项目展示了构建**可复现的多模态浏览器 Agent 工程系统**的全栈工程能力：
 >
-> - **系统设计** — 为热门开源框架（94k ⭐）设计无侵入插件架构，零上游修改
+> - **系统设计** — 为热门开源 browser-use 框架设计无侵入插件架构，零上游修改
 > - **ML 工程** — 部署 Florence-2 视觉基础模型为 GPU 推理服务；
 >   设计 SoM 标注管线实现视觉定位
 > - **性能优化** — 自适应推理基于 browser-use 索引序列化 DOM 的置信度评分门控视觉
