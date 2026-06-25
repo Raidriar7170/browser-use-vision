@@ -1,0 +1,630 @@
+{
+  "benchmark_name": "Ablation Study",
+  "version": "0.4.0",
+  "date": "2026-06-25",
+  "model": "gpt-4o",
+  "vision_backend": "Florence-2 (localhost:8100)",
+  "success_criterion": "objective verification (DOM / URL / live API)",
+  "conditions": {
+    "A_baseline": {
+      "description": "Pure DOM agent, no vision backend, no SoM annotation"
+    },
+    "C_full_always": {
+      "description": "Vision always FULL (OCR + Region Caption every step), no adaptive skip"
+    },
+    "E_adaptive_full": {
+      "description": "Adaptive vision (SKIP/LIGHTWEIGHT/FULL based on DOM confidence) — default config"
+    }
+  },
+  "results": [
+    {
+      "task": "icon_music_player",
+      "category": "icon-heavy",
+      "conditions": {
+        "A_baseline": {
+          "success": false,
+          "steps": 2,
+          "time_seconds": 33.8,
+          "vision_calls": 0,
+          "verify_detail": "dom_js(document.getElementById('result') && document.getElementById('result').textContent.toLowerCase().includes('next')) -> 'False'",
+          "is_done": true,
+          "error": null
+        },
+        "C_full_always": {
+          "success": false,
+          "steps": 2,
+          "time_seconds": 55.3,
+          "vision_calls": 2,
+          "verify_detail": "dom_js(document.getElementById('result') && document.getElementById('result').textContent.toLowerCase().includes('next')) -> 'False'",
+          "is_done": true,
+          "error": null
+        },
+        "E_adaptive_full": {
+          "success": false,
+          "steps": 0,
+          "time_seconds": 33.2,
+          "vision_calls": 0,
+          "verify_detail": "",
+          "is_done": false,
+          "error": "Timeout (240s)"
+        }
+      }
+    },
+    {
+      "task": "color_picker",
+      "category": "icon-heavy",
+      "conditions": {
+        "A_baseline": {
+          "success": false,
+          "steps": 8,
+          "time_seconds": 48.0,
+          "vision_calls": 0,
+          "verify_detail": "dom_js(document.querySelector('.color-swatch.selected') && document.querySelector('.color-swatch.selected').dataset.color==='green' && Array.isArray(window.actions) && window.actions.includes('apply')) -> 'False'",
+          "is_done": true,
+          "error": null
+        },
+        "C_full_always": {
+          "success": true,
+          "steps": 3,
+          "time_seconds": 36.0,
+          "vision_calls": 3,
+          "verify_detail": "dom_js(document.querySelector('.color-swatch.selected') && document.querySelector('.color-swatch.selected').dataset.color==='green' && Array.isArray(window.actions) && window.actions.includes('apply')) -> 'True'",
+          "is_done": true,
+          "error": null
+        },
+        "E_adaptive_full": {
+          "success": true,
+          "steps": 5,
+          "time_seconds": 75.8,
+          "vision_calls": 5,
+          "verify_detail": "dom_js(document.querySelector('.color-swatch.selected') && document.querySelector('.color-swatch.selected').dataset.color==='green' && Array.isArray(window.actions) && window.actions.includes('apply')) -> 'True'",
+          "is_done": true,
+          "error": null
+        }
+      }
+    },
+    {
+      "task": "toolbar_eraser",
+      "category": "icon-heavy",
+      "conditions": {
+        "A_baseline": {
+          "success": false,
+          "steps": 2,
+          "time_seconds": 13.4,
+          "vision_calls": 0,
+          "verify_detail": "dom_js(document.querySelector('.tool-btn.active') && document.querySelector('.tool-btn.active').dataset.tool==='eraser') -> 'False'",
+          "is_done": true,
+          "error": null
+        },
+        "C_full_always": {
+          "success": false,
+          "steps": 2,
+          "time_seconds": 20.5,
+          "vision_calls": 2,
+          "verify_detail": "dom_js(document.querySelector('.tool-btn.active') && document.querySelector('.tool-btn.active').dataset.tool==='eraser') -> 'False'",
+          "is_done": true,
+          "error": null
+        },
+        "E_adaptive_full": {
+          "success": false,
+          "steps": 8,
+          "time_seconds": 60.1,
+          "vision_calls": 8,
+          "verify_detail": "dom_js(document.querySelector('.tool-btn.active') && document.querySelector('.tool-btn.active').dataset.tool==='eraser') -> 'False'",
+          "is_done": true,
+          "error": null
+        }
+      }
+    },
+    {
+      "task": "social_feed_like",
+      "category": "icon-heavy",
+      "conditions": {
+        "A_baseline": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 17.8,
+          "vision_calls": 0,
+          "verify_detail": "dom_js(document.querySelectorAll('.post')[0] && document.querySelectorAll('.post')[0].querySelector('.action-btn.liked')!==null) -> 'True'",
+          "is_done": true,
+          "error": null
+        },
+        "C_full_always": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 26.2,
+          "vision_calls": 2,
+          "verify_detail": "dom_js(document.querySelectorAll('.post')[0] && document.querySelectorAll('.post')[0].querySelector('.action-btn.liked')!==null) -> 'True'",
+          "is_done": true,
+          "error": null
+        },
+        "E_adaptive_full": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 26.7,
+          "vision_calls": 2,
+          "verify_detail": "dom_js(document.querySelectorAll('.post')[0] && document.querySelectorAll('.post')[0].querySelector('.action-btn.liked')!==null) -> 'True'",
+          "is_done": true,
+          "error": null
+        }
+      }
+    },
+    {
+      "task": "ecommerce_filter_color",
+      "category": "mixed",
+      "conditions": {
+        "A_baseline": {
+          "success": false,
+          "steps": 8,
+          "time_seconds": 56.4,
+          "vision_calls": 0,
+          "verify_detail": "dom_js(document.querySelector('.color-swatch.selected') && document.querySelector('.color-swatch.selected').dataset.color==='blue') -> 'False'",
+          "is_done": true,
+          "error": null
+        },
+        "C_full_always": {
+          "success": false,
+          "steps": 8,
+          "time_seconds": 118.9,
+          "vision_calls": 8,
+          "verify_detail": "dom_js(document.querySelector('.color-swatch.selected') && document.querySelector('.color-swatch.selected').dataset.color==='blue') -> 'False'",
+          "is_done": true,
+          "error": null
+        },
+        "E_adaptive_full": {
+          "success": true,
+          "steps": 5,
+          "time_seconds": 69.3,
+          "vision_calls": 5,
+          "verify_detail": "dom_js(document.querySelector('.color-swatch.selected') && document.querySelector('.color-swatch.selected').dataset.color==='blue') -> 'True'",
+          "is_done": true,
+          "error": null
+        }
+      }
+    },
+    {
+      "task": "dashboard_chart_tab",
+      "category": "dom-rich",
+      "conditions": {
+        "A_baseline": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 13.4,
+          "vision_calls": 0,
+          "verify_detail": "dom_js(document.querySelector('.chart-tab.active') && document.querySelector('.chart-tab.active').textContent.trim()==='Monthly') -> 'True'",
+          "is_done": true,
+          "error": null
+        },
+        "C_full_always": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 35.6,
+          "vision_calls": 2,
+          "verify_detail": "dom_js(document.querySelector('.chart-tab.active') && document.querySelector('.chart-tab.active').textContent.trim()==='Monthly') -> 'True'",
+          "is_done": true,
+          "error": null
+        },
+        "E_adaptive_full": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 17.5,
+          "vision_calls": 0,
+          "verify_detail": "dom_js(document.querySelector('.chart-tab.active') && document.querySelector('.chart-tab.active').textContent.trim()==='Monthly') -> 'True'",
+          "is_done": true,
+          "error": null
+        }
+      }
+    },
+    {
+      "task": "wikipedia_toc_nav",
+      "category": "mixed",
+      "conditions": {
+        "A_baseline": {
+          "success": false,
+          "steps": 3,
+          "time_seconds": 277.6,
+          "vision_calls": 0,
+          "verify_detail": "",
+          "is_done": false,
+          "error": "Timeout (240s)"
+        },
+        "C_full_always": {
+          "success": false,
+          "steps": 4,
+          "time_seconds": 276.3,
+          "vision_calls": 0,
+          "verify_detail": "",
+          "is_done": false,
+          "error": "Timeout (240s)"
+        },
+        "E_adaptive_full": {
+          "success": false,
+          "steps": 0,
+          "time_seconds": 219.8,
+          "vision_calls": 0,
+          "verify_detail": "url='https://en.wikipedia.org/wiki/Artificial_intelligence' expected~['Machine_learning']",
+          "is_done": false,
+          "error": null
+        }
+      }
+    },
+    {
+      "task": "wikipedia_search",
+      "category": "mixed",
+      "conditions": {
+        "A_baseline": {
+          "success": false,
+          "steps": 0,
+          "time_seconds": 33.2,
+          "vision_calls": 0,
+          "verify_detail": "",
+          "is_done": false,
+          "error": "Timeout (240s)"
+        },
+        "C_full_always": {
+          "success": false,
+          "steps": 3,
+          "time_seconds": 281.3,
+          "vision_calls": 2,
+          "verify_detail": "url='https://www.google.com/search?q=Alan+Turing+site%3Awikipedia.org' expected~['Alan_Turing']",
+          "is_done": true,
+          "error": null
+        },
+        "E_adaptive_full": {
+          "success": false,
+          "steps": 0,
+          "time_seconds": 33.2,
+          "vision_calls": 0,
+          "verify_detail": "",
+          "is_done": false,
+          "error": "Timeout (240s)"
+        }
+      }
+    },
+    {
+      "task": "hackernews_top_story",
+      "category": "mixed",
+      "conditions": {
+        "A_baseline": {
+          "success": false,
+          "steps": 0,
+          "time_seconds": 33.2,
+          "vision_calls": 0,
+          "verify_detail": "",
+          "is_done": false,
+          "error": "Timeout (240s)"
+        },
+        "C_full_always": {
+          "success": false,
+          "steps": 0,
+          "time_seconds": 66.2,
+          "vision_calls": 0,
+          "verify_detail": "",
+          "is_done": false,
+          "error": "Timeout (240s)"
+        },
+        "E_adaptive_full": {
+          "success": false,
+          "steps": 0,
+          "time_seconds": 33.1,
+          "vision_calls": 0,
+          "verify_detail": "",
+          "is_done": false,
+          "error": "Timeout (240s)"
+        }
+      }
+    },
+    {
+      "task": "arxiv_search",
+      "category": "dom-rich",
+      "conditions": {
+        "A_baseline": {
+          "success": true,
+          "steps": 8,
+          "time_seconds": 62.5,
+          "vision_calls": 0,
+          "verify_detail": "url='https://arxiv.org/search/?query=vision+language+model&searchtype=all&source=header' expected~['/search/']",
+          "is_done": true,
+          "error": null
+        },
+        "C_full_always": {
+          "success": false,
+          "steps": 0,
+          "time_seconds": 30.2,
+          "vision_calls": 0,
+          "verify_detail": "",
+          "is_done": false,
+          "error": "Timeout (240s)"
+        },
+        "E_adaptive_full": {
+          "success": false,
+          "steps": 0,
+          "time_seconds": 33.2,
+          "vision_calls": 0,
+          "verify_detail": "",
+          "is_done": false,
+          "error": "Timeout (240s)"
+        }
+      }
+    },
+    {
+      "task": "quotes_first_author",
+      "category": "dom-rich",
+      "conditions": {
+        "A_baseline": {
+          "success": true,
+          "steps": 1,
+          "time_seconds": 11.4,
+          "vision_calls": 0,
+          "verify_detail": "result expected~['albert einstein'] (got 72 chars)",
+          "is_done": true,
+          "error": null
+        },
+        "C_full_always": {
+          "success": false,
+          "steps": 0,
+          "time_seconds": 30.2,
+          "vision_calls": 0,
+          "verify_detail": "",
+          "is_done": false,
+          "error": "Timeout (240s)"
+        },
+        "E_adaptive_full": {
+          "success": false,
+          "steps": 0,
+          "time_seconds": 33.1,
+          "vision_calls": 0,
+          "verify_detail": "",
+          "is_done": false,
+          "error": "Timeout (240s)"
+        }
+      }
+    },
+    {
+      "task": "quotes_tag_nav",
+      "category": "mixed",
+      "conditions": {
+        "A_baseline": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 14.6,
+          "vision_calls": 0,
+          "verify_detail": "result expected~['gide'] (got 67 chars)",
+          "is_done": true,
+          "error": null
+        },
+        "C_full_always": {
+          "success": false,
+          "steps": 0,
+          "time_seconds": 30.2,
+          "vision_calls": 0,
+          "verify_detail": "",
+          "is_done": false,
+          "error": "Timeout (240s)"
+        },
+        "E_adaptive_full": {
+          "success": false,
+          "steps": 0,
+          "time_seconds": 33.2,
+          "vision_calls": 0,
+          "verify_detail": "",
+          "is_done": false,
+          "error": "Timeout (240s)"
+        }
+      }
+    },
+    {
+      "task": "books_price",
+      "category": "dom-rich",
+      "conditions": {
+        "A_baseline": {
+          "success": true,
+          "steps": 1,
+          "time_seconds": 9.2,
+          "vision_calls": 0,
+          "verify_detail": "result expected~['51.77'] (got 59 chars)",
+          "is_done": true,
+          "error": null
+        },
+        "C_full_always": {
+          "success": true,
+          "steps": 1,
+          "time_seconds": 34.2,
+          "vision_calls": 1,
+          "verify_detail": "result expected~['51.77'] (got 55 chars)",
+          "is_done": true,
+          "error": null
+        },
+        "E_adaptive_full": {
+          "success": false,
+          "steps": 0,
+          "time_seconds": 33.2,
+          "vision_calls": 0,
+          "verify_detail": "",
+          "is_done": false,
+          "error": "Timeout (240s)"
+        }
+      }
+    },
+    {
+      "task": "books_category",
+      "category": "dom-rich",
+      "conditions": {
+        "A_baseline": {
+          "success": true,
+          "steps": 2,
+          "time_seconds": 14.7,
+          "vision_calls": 0,
+          "verify_detail": "result expected~['himalayas'] (got 89 chars)",
+          "is_done": true,
+          "error": null
+        },
+        "C_full_always": {
+          "success": false,
+          "steps": 0,
+          "time_seconds": 33.2,
+          "vision_calls": 0,
+          "verify_detail": "",
+          "is_done": false,
+          "error": "Timeout (240s)"
+        },
+        "E_adaptive_full": {
+          "success": false,
+          "steps": 0,
+          "time_seconds": 33.2,
+          "vision_calls": 0,
+          "verify_detail": "",
+          "is_done": false,
+          "error": "Timeout (240s)"
+        }
+      }
+    },
+    {
+      "task": "herokuapp_checkbox",
+      "category": "dom-rich",
+      "conditions": {
+        "A_baseline": {
+          "success": false,
+          "steps": 0,
+          "time_seconds": 60.2,
+          "vision_calls": 0,
+          "verify_detail": "",
+          "is_done": false,
+          "error": "Timeout (240s)"
+        },
+        "C_full_always": {
+          "success": false,
+          "steps": 0,
+          "time_seconds": 33.2,
+          "vision_calls": 0,
+          "verify_detail": "",
+          "is_done": false,
+          "error": "Timeout (240s)"
+        },
+        "E_adaptive_full": {
+          "success": false,
+          "steps": 0,
+          "time_seconds": 33.1,
+          "vision_calls": 0,
+          "verify_detail": "",
+          "is_done": false,
+          "error": "Timeout (240s)"
+        }
+      }
+    },
+    {
+      "task": "herokuapp_dropdown",
+      "category": "dom-rich",
+      "conditions": {
+        "A_baseline": {
+          "success": false,
+          "steps": 0,
+          "time_seconds": 33.1,
+          "vision_calls": 0,
+          "verify_detail": "",
+          "is_done": false,
+          "error": "Timeout (240s)"
+        },
+        "C_full_always": {
+          "success": false,
+          "steps": 0,
+          "time_seconds": 82.0,
+          "vision_calls": 0,
+          "verify_detail": "",
+          "is_done": false,
+          "error": "Timeout (240s)"
+        },
+        "E_adaptive_full": {
+          "success": false,
+          "steps": 0,
+          "time_seconds": 33.2,
+          "vision_calls": 0,
+          "verify_detail": "",
+          "is_done": false,
+          "error": "Timeout (240s)"
+        }
+      }
+    }
+  ],
+  "summary": {
+    "by_condition": {
+      "A_baseline": {
+        "success_rate": 0.438,
+        "successes": 7,
+        "total": 16,
+        "avg_steps": 2.56,
+        "avg_time": 45.8,
+        "total_vision_calls": 0
+      },
+      "C_full_always": {
+        "success_rate": 0.25,
+        "successes": 4,
+        "total": 16,
+        "avg_steps": 1.69,
+        "avg_time": 74.3,
+        "total_vision_calls": 22
+      },
+      "E_adaptive_full": {
+        "success_rate": 0.25,
+        "successes": 4,
+        "total": 16,
+        "avg_steps": 1.38,
+        "avg_time": 50.1,
+        "total_vision_calls": 20
+      }
+    },
+    "by_category": {
+      "icon-heavy": {
+        "A_baseline": {
+          "success_rate": 0.25,
+          "successes": 1,
+          "total": 4
+        },
+        "C_full_always": {
+          "success_rate": 0.5,
+          "successes": 2,
+          "total": 4
+        },
+        "E_adaptive_full": {
+          "success_rate": 0.5,
+          "successes": 2,
+          "total": 4
+        }
+      },
+      "mixed": {
+        "A_baseline": {
+          "success_rate": 0.2,
+          "successes": 1,
+          "total": 5
+        },
+        "C_full_always": {
+          "success_rate": 0.0,
+          "successes": 0,
+          "total": 5
+        },
+        "E_adaptive_full": {
+          "success_rate": 0.2,
+          "successes": 1,
+          "total": 5
+        }
+      },
+      "dom-rich": {
+        "A_baseline": {
+          "success_rate": 0.714,
+          "successes": 5,
+          "total": 7
+        },
+        "C_full_always": {
+          "success_rate": 0.286,
+          "successes": 2,
+          "total": 7
+        },
+        "E_adaptive_full": {
+          "success_rate": 0.143,
+          "successes": 1,
+          "total": 7
+        }
+      }
+    }
+  }
+}

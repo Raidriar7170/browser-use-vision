@@ -1,0 +1,291 @@
+{
+  "conditions_order": [
+    "A_baseline",
+    "C_full_always",
+    "E_adaptive_full"
+  ],
+  "total_records": 144,
+  "bootstrap_samples": 2000,
+  "bootstrap_seed": 20260625,
+  "ci_method": "task-cluster bootstrap for condition rates; paired task-cluster bootstrap for deltas",
+  "conditions": {
+    "A_baseline": {
+      "status": "present",
+      "records": 48,
+      "successes": 17,
+      "task_clusters": 16,
+      "success_rate_mean": 0.3542,
+      "success_rate_ci95": [
+        0.1458,
+        0.5625
+      ],
+      "avg_steps": 1.9583,
+      "avg_vision_calls": 0.0,
+      "avg_time_seconds": 41.5917,
+      "missing_metric_counts": {
+        "steps": 0,
+        "vision_calls": 0,
+        "time_seconds": 0
+      },
+      "category_breakdown": {
+        "dom-rich": {
+          "records": 21,
+          "successes": 12,
+          "success_rate": 0.5714
+        },
+        "icon-heavy": {
+          "records": 12,
+          "successes": 2,
+          "success_rate": 0.1667
+        },
+        "mixed": {
+          "records": 15,
+          "successes": 3,
+          "success_rate": 0.2
+        }
+      },
+      "frontier": {
+        "success_per_vision_call": null,
+        "is_pareto_candidate": true,
+        "vision_call_savings_vs_C_full_always": 1.3333
+      },
+      "delta_vs_A_baseline": {
+        "success_rate": 0.0,
+        "steps": 0.0,
+        "vision_calls": 0.0,
+        "time_seconds": 0.0
+      },
+      "delta_vs_A_baseline_ci95": {
+        "success_rate": [
+          0.0,
+          0.0
+        ],
+        "steps": [
+          0.0,
+          0.0
+        ],
+        "vision_calls": [
+          0.0,
+          0.0
+        ],
+        "time_seconds": [
+          0.0,
+          0.0
+        ]
+      },
+      "paired_blocks_vs_A_baseline": 16,
+      "delta_vs_C_full_always": {
+        "success_rate": -0.0625,
+        "steps": -1.1875,
+        "vision_calls": -0.875,
+        "time_seconds": -45.3312
+      },
+      "delta_vs_C_full_always_ci95": {
+        "success_rate": [
+          -0.375,
+          0.25
+        ],
+        "steps": [
+          -2.3125,
+          -0.25
+        ],
+        "vision_calls": [
+          -1.375,
+          -0.375
+        ],
+        "time_seconds": [
+          -89.7375,
+          -11.4375
+        ]
+      },
+      "paired_blocks_vs_C_full_always": 16
+    },
+    "C_full_always": {
+      "status": "present",
+      "records": 48,
+      "successes": 18,
+      "task_clusters": 16,
+      "success_rate_mean": 0.375,
+      "success_rate_ci95": [
+        0.1875,
+        0.5625
+      ],
+      "avg_steps": 1.7917,
+      "avg_vision_calls": 1.3333,
+      "avg_time_seconds": 75.1083,
+      "missing_metric_counts": {
+        "steps": 0,
+        "vision_calls": 0,
+        "time_seconds": 0
+      },
+      "category_breakdown": {
+        "dom-rich": {
+          "records": 21,
+          "successes": 8,
+          "success_rate": 0.381
+        },
+        "icon-heavy": {
+          "records": 12,
+          "successes": 6,
+          "success_rate": 0.5
+        },
+        "mixed": {
+          "records": 15,
+          "successes": 4,
+          "success_rate": 0.2667
+        }
+      },
+      "frontier": {
+        "success_per_vision_call": 0.2812,
+        "is_pareto_candidate": true,
+        "vision_call_savings_vs_C_full_always": 0.0
+      },
+      "delta_vs_A_baseline": {
+        "success_rate": 0.0625,
+        "steps": 1.1875,
+        "vision_calls": 0.875,
+        "time_seconds": 45.3312
+      },
+      "delta_vs_A_baseline_ci95": {
+        "success_rate": [
+          -0.25,
+          0.375
+        ],
+        "steps": [
+          0.1875,
+          2.25
+        ],
+        "vision_calls": [
+          0.375,
+          1.375
+        ],
+        "time_seconds": [
+          10.925,
+          90.125
+        ]
+      },
+      "paired_blocks_vs_A_baseline": 16,
+      "delta_vs_C_full_always": {
+        "success_rate": 0.0,
+        "steps": 0.0,
+        "vision_calls": 0.0,
+        "time_seconds": 0.0
+      },
+      "delta_vs_C_full_always_ci95": {
+        "success_rate": [
+          0.0,
+          0.0
+        ],
+        "steps": [
+          0.0,
+          0.0
+        ],
+        "vision_calls": [
+          0.0,
+          0.0
+        ],
+        "time_seconds": [
+          0.0,
+          0.0
+        ]
+      },
+      "paired_blocks_vs_C_full_always": 16
+    },
+    "E_adaptive_full": {
+      "status": "present",
+      "records": 48,
+      "successes": 14,
+      "task_clusters": 16,
+      "success_rate_mean": 0.2917,
+      "success_rate_ci95": [
+        0.1458,
+        0.4792
+      ],
+      "avg_steps": 1.7083,
+      "avg_vision_calls": 1.0417,
+      "avg_time_seconds": 67.6229,
+      "missing_metric_counts": {
+        "steps": 0,
+        "vision_calls": 0,
+        "time_seconds": 0
+      },
+      "category_breakdown": {
+        "dom-rich": {
+          "records": 21,
+          "successes": 6,
+          "success_rate": 0.2857
+        },
+        "icon-heavy": {
+          "records": 12,
+          "successes": 6,
+          "success_rate": 0.5
+        },
+        "mixed": {
+          "records": 15,
+          "successes": 2,
+          "success_rate": 0.1333
+        }
+      },
+      "frontier": {
+        "success_per_vision_call": 0.28,
+        "is_pareto_candidate": false,
+        "vision_call_savings_vs_C_full_always": 0.2916
+      },
+      "delta_vs_A_baseline": {
+        "success_rate": 0.0625,
+        "steps": 2.25,
+        "vision_calls": 1.125,
+        "time_seconds": 58.4313
+      },
+      "delta_vs_A_baseline_ci95": {
+        "success_rate": [
+          -0.1875,
+          0.3125
+        ],
+        "steps": [
+          0.875,
+          3.8125
+        ],
+        "vision_calls": [
+          0.3125,
+          2.3125
+        ],
+        "time_seconds": [
+          23.5813,
+          100.4813
+        ]
+      },
+      "paired_blocks_vs_A_baseline": 16,
+      "delta_vs_C_full_always": {
+        "success_rate": 0.0,
+        "steps": 1.0625,
+        "vision_calls": 0.25,
+        "time_seconds": 13.1
+      },
+      "delta_vs_C_full_always_ci95": {
+        "success_rate": [
+          -0.3125,
+          0.375
+        ],
+        "steps": [
+          -0.3125,
+          2.375
+        ],
+        "vision_calls": [
+          -0.4375,
+          1.1875
+        ],
+        "time_seconds": [
+          -7.6125,
+          37.5312
+        ]
+      },
+      "paired_blocks_vs_C_full_always": 16
+    }
+  },
+  "source_files": [
+    "output/benchmark_results/repeated-gpt4o-ace-3x/raw/ablation_results_gpt-4o_repeat1.json",
+    "output/benchmark_results/repeated-gpt4o-ace-3x/raw/ablation_results_gpt-4o_repeat2.json",
+    "output/benchmark_results/repeated-gpt4o-ace-3x/raw/ablation_results_gpt-4o_repeat3.json"
+  ]
+}
