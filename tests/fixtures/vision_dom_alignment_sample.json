@@ -5,6 +5,7 @@
     {
       "page_id": "icon_toolbar_fixture",
       "group": "icon-heavy",
+      "viewport": {"width": 200, "height": 100},
       "elements": [
         {
           "element_id": "eraser_button",
@@ -24,6 +25,7 @@
     {
       "page_id": "text_article_fixture",
       "group": "text-rich",
+      "viewport": {"width": 240, "height": 120},
       "elements": [
         {
           "element_id": "search_input",

@@ -23,6 +23,15 @@ def _bbox_xyxy(value: Any) -> tuple[float, float, float, float]:
     raise ValueError(f"Unsupported bbox format: {value!r}")
 
 
+def _bbox_xyxy_or_none(value: Any) -> tuple[float, float, float, float] | None:
+    if value is None:
+        return None
+    try:
+        return _bbox_xyxy(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def _area(box: tuple[float, float, float, float]) -> float:
     return max(0.0, box[2] - box[0]) * max(0.0, box[3] - box[1])
 
@@ -49,14 +58,26 @@ def center_distance(a: Any, b: Any) -> float:
     return math.hypot(ax - bx, ay - by)
 
 
+def _viewport_diagonal(page: dict[str, Any]) -> float | None:
+    viewport = page.get("viewport") or {}
+    width = viewport.get("width") or page.get("viewport_width")
+    height = viewport.get("height") or page.get("viewport_height")
+    if width is None or height is None:
+        return None
+    diag = math.hypot(float(width), float(height))
+    return diag if diag > 0 else None
+
+
 def _element_records(fixture: dict[str, Any]) -> list[dict[str, Any]]:
     records = []
     for page in fixture.get("pages", []):
         page_id = str(page.get("page_id") or page.get("url") or "unknown")
         group = str(page.get("group") or page.get("element_group") or "unknown")
+        page_diagonal = _viewport_diagonal(page)
         for element in page.get("elements", []):
             gold_id = str(element.get("element_id") or element.get("dom_id") or element.get("id"))
             gold_bbox = element.get("bbox")
+            gold_box = _bbox_xyxy_or_none(gold_bbox)
             predictions = sorted(
                 element.get("predictions", []),
                 key=lambda pred: float(pred.get("score", 0.0)),
@@ -66,6 +87,10 @@ def _element_records(fixture: dict[str, Any]) -> list[dict[str, Any]]:
             top3 = predictions[:3]
             top_id = str(top.get("element_id") or top.get("dom_id") or top.get("id")) if top else None
             top_bbox = top.get("bbox") if top else None
+            top_box = _bbox_xyxy_or_none(top_bbox)
+            top_center_distance = (
+                center_distance(gold_box, top_box) if gold_box is not None and top_box is not None else None
+            )
             records.append(
                 {
                     "page_id": page_id,
@@ -78,25 +103,38 @@ def _element_records(fixture: dict[str, Any]) -> list[dict[str, Any]]:
                         str(pred.get("element_id") or pred.get("dom_id") or pred.get("id")) == gold_id for pred in top3
                     ),
                     "unmatched": not predictions,
-                    "top_iou": bbox_iou(gold_bbox, top_bbox) if top_bbox is not None else None,
-                    "top_center_distance": center_distance(gold_bbox, top_bbox) if top_bbox is not None else None,
+                    "top_iou": bbox_iou(gold_box, top_box) if gold_box is not None and top_box is not None else None,
+                    "top_center_distance": top_center_distance,
+                    "top_normalized_center_distance": top_center_distance / page_diagonal
+                    if top_center_distance is not None and page_diagonal
+                    else None,
                 }
             )
     return records
+
+
+def _mean(values: list[float | None]) -> float:
+    present = [value for value in values if value is not None]
+    return sum(present) / len(present) if present else 0.0
 
 
 def _summarize(records: list[dict[str, Any]]) -> dict[str, Any]:
     total = len(records)
     matched_geometry = [record for record in records if not record["unmatched"]]
     ious = [record["top_iou"] for record in matched_geometry]
+    top1_correct_ious = [record["top_iou"] for record in matched_geometry if record["top1_match"]]
     distances = [record["top_center_distance"] for record in matched_geometry]
+    normalized_distances = [record["top_normalized_center_distance"] for record in matched_geometry]
     return {
         "total": total,
         "top1_dom_match_accuracy": sum(1 for row in records if row["top1_match"]) / total if total else 0.0,
         "top3_dom_match_recall": sum(1 for row in records if row["top3_match"]) / total if total else 0.0,
         "unmatched_rate": sum(1 for row in records if row["unmatched"]) / total if total else 0.0,
-        "mean_iou": sum(ious) / len(ious) if ious else 0.0,
-        "mean_center_distance": sum(distances) / len(distances) if distances else 0.0,
+        "mean_iou": _mean(ious),
+        "mean_iou_all_predictions": _mean(ious),
+        "mean_iou_top1_correct": _mean(top1_correct_ious),
+        "mean_center_distance": _mean(distances),
+        "normalized_center_distance": _mean(normalized_distances),
     }
 
 

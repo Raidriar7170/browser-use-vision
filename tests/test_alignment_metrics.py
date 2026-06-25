@@ -15,6 +15,7 @@ def test_alignment_metrics_include_topk_unmatched_geometry_and_group_breakdowns(
             {
                 "page_id": "toolbar",
                 "group": "icon-heavy",
+                "viewport": {"width": 200, "height": 100},
                 "elements": [
                     {
                         "element_id": "next_button",
@@ -34,6 +35,7 @@ def test_alignment_metrics_include_topk_unmatched_geometry_and_group_breakdowns(
             {
                 "page_id": "article",
                 "group": "text-rich",
+                "viewport": {"width": 200, "height": 100},
                 "elements": [
                     {
                         "element_id": "search_input",
@@ -55,7 +57,10 @@ def test_alignment_metrics_include_topk_unmatched_geometry_and_group_breakdowns(
     assert metrics["overall"]["top3_dom_match_recall"] == 2 / 3
     assert metrics["overall"]["unmatched_rate"] == 1 / 3
     assert metrics["overall"]["mean_iou"] == 0.5
+    assert metrics["overall"]["mean_iou_all_predictions"] == 0.5
+    assert metrics["overall"]["mean_iou_top1_correct"] == 1.0
     assert metrics["overall"]["mean_center_distance"] == 20.0
+    assert metrics["overall"]["normalized_center_distance"] == 20.0 / (200**2 + 100**2) ** 0.5
 
     icon = metrics["by_group"]["icon-heavy"]
     assert icon["total"] == 2
@@ -74,5 +79,8 @@ def test_sample_alignment_fixture_runs_deterministically():
     assert metrics["overall"]["total"] == 4
     assert metrics["overall"]["top1_dom_match_accuracy"] == 0.5
     assert metrics["overall"]["top3_dom_match_recall"] == 0.75
+    assert "mean_iou_all_predictions" in metrics["overall"]
+    assert "mean_iou_top1_correct" in metrics["overall"]
+    assert "normalized_center_distance" in metrics["overall"]
     assert metrics["by_group"]["icon-heavy"]["total"] == 2
     assert metrics["by_group"]["text-rich"]["total"] == 2

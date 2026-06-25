@@ -21,6 +21,11 @@ def _mean(values: list[float]) -> float:
     return sum(values) / len(values) if values else 0.0
 
 
+def _mean_optional(values: list[float | None]) -> float | None:
+    present = [value for value in values if value is not None]
+    return sum(present) / len(present) if present else None
+
+
 def _round(value: float | None, digits: int = 4) -> float | None:
     if value is None:
         return None
@@ -64,7 +69,7 @@ def _bootstrap_ci_numeric(values: list[float], *, samples: int, seed: int) -> li
     return [_round(draws[low_idx]), _round(draws[high_idx])]
 
 
-def _metric_value(metrics: dict[str, Any], *names: str, default: float = 0.0) -> float:
+def _metric_value(metrics: dict[str, Any], *names: str, default: float | None = None) -> float | None:
     for name in names:
         value = metrics.get(name)
         if value is not None:
@@ -158,6 +163,23 @@ def _category_breakdown(records: list[dict]) -> dict[str, dict[str, Any]]:
     return breakdown
 
 
+def _task_cluster_means(records: list[dict], field: str) -> list[float]:
+    grouped: dict[str, list[float]] = defaultdict(list)
+    for record in records:
+        value = record.get(field)
+        if value is None:
+            continue
+        grouped[str(record["task_name"])].append(float(value))
+    return [_mean(values) for values in grouped.values() if values]
+
+
+def _task_cluster_success_means(records: list[dict]) -> list[float]:
+    grouped: dict[str, list[float]] = defaultdict(list)
+    for record in records:
+        grouped[str(record["task_name"])].append(1.0 if record["success"] else 0.0)
+    return [_mean(values) for values in grouped.values() if values]
+
+
 def _condition_summary(records: list[dict], *, bootstrap_samples: int, seed: int) -> dict[str, Any]:
     if not records:
         return {
@@ -180,21 +202,27 @@ def _condition_summary(records: list[dict], *, bootstrap_samples: int, seed: int
     total = len(records)
     success_count = sum(1 for ok in successes if ok)
     success_rate = success_count / total if total else 0.0
-    avg_steps = _mean([row["steps"] for row in records])
-    avg_vision = _mean([row["vision_calls"] for row in records])
-    avg_time = _mean([row["time_seconds"] for row in records])
+    avg_steps = _mean_optional([row["steps"] for row in records])
+    avg_vision = _mean_optional([row["vision_calls"] for row in records])
+    avg_time = _mean_optional([row["time_seconds"] for row in records])
+    success_clusters = _task_cluster_success_means(records)
+    missing_metric_counts = {
+        name: sum(1 for row in records if row[name] is None) for name in ("steps", "vision_calls", "time_seconds")
+    }
     return {
         "status": "present",
         "records": total,
         "successes": success_count,
+        "task_clusters": len(success_clusters),
         "success_rate_mean": _round(success_rate),
-        "success_rate_ci95": _bootstrap_ci_binary(successes, samples=bootstrap_samples, seed=seed),
+        "success_rate_ci95": _bootstrap_ci_numeric(success_clusters, samples=bootstrap_samples, seed=seed),
         "avg_steps": _round(avg_steps),
         "avg_vision_calls": _round(avg_vision),
         "avg_time_seconds": _round(avg_time),
+        "missing_metric_counts": missing_metric_counts,
         "category_breakdown": _category_breakdown(records),
         "frontier": {
-            "success_per_vision_call": _round(success_rate / avg_vision) if avg_vision > 0 else None,
+            "success_per_vision_call": _round(success_rate / avg_vision) if avg_vision and avg_vision > 0 else None,
             "is_pareto_candidate": False,
         },
     }
@@ -217,37 +245,58 @@ def _paired_delta(
     if not paired_keys:
         return None, None, 0
 
-    success_deltas = [
-        (1.0 if current_index[key]["success"] else 0.0) - (1.0 if baseline_index[key]["success"] else 0.0)
-        for key in paired_keys
-    ]
-    step_deltas = [current_index[key]["steps"] - baseline_index[key]["steps"] for key in paired_keys]
-    vision_deltas = [current_index[key]["vision_calls"] - baseline_index[key]["vision_calls"] for key in paired_keys]
-    time_deltas = [current_index[key]["time_seconds"] - baseline_index[key]["time_seconds"] for key in paired_keys]
+    grouped: dict[str, dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
+    for key in paired_keys:
+        task_name = key[1]
+        current = current_index[key]
+        baseline = baseline_index[key]
+        grouped[task_name]["success_rate"].append(
+            (1.0 if current["success"] else 0.0) - (1.0 if baseline["success"] else 0.0)
+        )
+        for metric in ("steps", "vision_calls", "time_seconds"):
+            if current[metric] is not None and baseline[metric] is not None:
+                grouped[task_name][metric].append(current[metric] - baseline[metric])
+
+    success_deltas = [_mean(values["success_rate"]) for values in grouped.values() if values["success_rate"]]
+    step_deltas = [_mean(values["steps"]) for values in grouped.values() if values["steps"]]
+    vision_deltas = [_mean(values["vision_calls"]) for values in grouped.values() if values["vision_calls"]]
+    time_deltas = [_mean(values["time_seconds"]) for values in grouped.values() if values["time_seconds"]]
 
     point = {
         "success_rate": _round(_mean(success_deltas)),
-        "steps": _round(_mean(step_deltas)),
-        "vision_calls": _round(_mean(vision_deltas)),
-        "time_seconds": _round(_mean(time_deltas)),
+        "steps": _round(_mean(step_deltas)) if step_deltas else None,
+        "vision_calls": _round(_mean(vision_deltas)) if vision_deltas else None,
+        "time_seconds": _round(_mean(time_deltas)) if time_deltas else None,
     }
     ci = {
         "success_rate": _bootstrap_ci_numeric(success_deltas, samples=bootstrap_samples, seed=seed),
-        "steps": _bootstrap_ci_numeric(step_deltas, samples=bootstrap_samples, seed=seed + 1),
-        "vision_calls": _bootstrap_ci_numeric(vision_deltas, samples=bootstrap_samples, seed=seed + 2),
-        "time_seconds": _bootstrap_ci_numeric(time_deltas, samples=bootstrap_samples, seed=seed + 3),
+        "steps": _bootstrap_ci_numeric(step_deltas, samples=bootstrap_samples, seed=seed + 1)
+        if step_deltas
+        else [None, None],
+        "vision_calls": _bootstrap_ci_numeric(vision_deltas, samples=bootstrap_samples, seed=seed + 2)
+        if vision_deltas
+        else [None, None],
+        "time_seconds": _bootstrap_ci_numeric(time_deltas, samples=bootstrap_samples, seed=seed + 3)
+        if time_deltas
+        else [None, None],
     }
-    return point, ci, len(paired_keys)
+    return point, ci, len(success_deltas)
 
 
 def _delta(current: dict[str, Any], baseline: dict[str, Any] | None) -> dict[str, float] | None:
     if baseline is None or current.get("status") == "missing" or baseline.get("status") == "missing":
         return None
+
+    def _metric_delta(name: str) -> float | None:
+        if current[name] is None or baseline[name] is None:
+            return None
+        return _round(current[name] - baseline[name])
+
     return {
         "success_rate": _round(current["success_rate_mean"] - baseline["success_rate_mean"]),
-        "steps": _round(current["avg_steps"] - baseline["avg_steps"]),
-        "vision_calls": _round(current["avg_vision_calls"] - baseline["avg_vision_calls"]),
-        "time_seconds": _round(current["avg_time_seconds"] - baseline["avg_time_seconds"]),
+        "steps": _metric_delta("avg_steps"),
+        "vision_calls": _metric_delta("avg_vision_calls"),
+        "time_seconds": _metric_delta("avg_time_seconds"),
     }
 
 
@@ -262,6 +311,13 @@ def _mark_pareto_frontier(condition_summaries: dict[str, dict[str, Any]]) -> Non
             if other_name == name:
                 continue
             if other.get("status") == "missing":
+                continue
+            if (
+                current["avg_vision_calls"] is None
+                or current["avg_time_seconds"] is None
+                or other["avg_vision_calls"] is None
+                or other["avg_time_seconds"] is None
+            ):
                 continue
             no_worse = (
                 other["success_rate_mean"] >= current["success_rate_mean"]
@@ -328,7 +384,13 @@ def aggregate_repeated_results(
         summary["delta_vs_C_full_always"] = paired_c or _delta(summary, full)
         summary["delta_vs_C_full_always_ci95"] = paired_c_ci
         summary["paired_blocks_vs_C_full_always"] = paired_c_blocks
-        if summary.get("status") != "missing" and full and full.get("status") != "missing" and full["avg_vision_calls"]:
+        if (
+            summary.get("status") != "missing"
+            and full
+            and full.get("status") != "missing"
+            and full["avg_vision_calls"] is not None
+            and summary["avg_vision_calls"] is not None
+        ):
             summary["frontier"]["vision_call_savings_vs_C_full_always"] = _round(
                 full["avg_vision_calls"] - summary["avg_vision_calls"]
             )
@@ -341,7 +403,7 @@ def aggregate_repeated_results(
         "total_records": len(filtered),
         "bootstrap_samples": bootstrap_samples,
         "bootstrap_seed": seed,
-        "ci_method": "paired task-run bootstrap for deltas; per-condition task-run bootstrap for condition rates",
+        "ci_method": "task-cluster bootstrap for condition rates; paired task-cluster bootstrap for deltas",
         "conditions": condition_summaries,
     }
 
@@ -393,7 +455,7 @@ def build_markdown_report(summary: dict[str, Any]) -> str:
         f"Bootstrap seed: {summary.get('bootstrap_seed', 0)}",
         f"CI method: {summary.get('ci_method', 'task-run bootstrap')}",
         "",
-        "Note: missing conditions are reported as missing, not zero-performance rows. Delta CIs use paired `(run_id, task_name)` blocks when available.",
+        "Note: missing conditions are reported as missing, not zero-performance rows. Delta CIs use paired task-name clusters when available.",
         "",
         "| Condition | Success Rate Mean | 95% CI | Avg Steps | Avg Vision Calls | Avg Time | Delta vs A | Delta vs C Vision | Frontier |",
         "|---|---:|---:|---:|---:|---:|---:|---:|---|",

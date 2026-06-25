@@ -135,3 +135,79 @@ def test_delta_ci_uses_paired_run_task_blocks():
     assert adaptive["delta_vs_A_baseline"]["success_rate"] == 0.0
     assert adaptive["delta_vs_A_baseline_ci95"]["success_rate"] == [0.0, 0.0]
     assert adaptive["paired_blocks_vs_A_baseline"] == 2
+
+
+def test_missing_numeric_metrics_do_not_become_zero_latency_or_zero_steps():
+    payload = {
+        "run_id": "run-1",
+        "results": [
+            {
+                "task": "task_one",
+                "category": "icon-heavy",
+                "conditions": {
+                    "A_baseline": {"success": True},
+                    "C_full_always": {"success": True, "steps": 2, "vision_calls": 3, "time_seconds": 4.0},
+                },
+            },
+            {
+                "task": "task_two",
+                "category": "icon-heavy",
+                "conditions": {
+                    "A_baseline": {"success": True, "steps": 8, "vision_calls": 0, "time_seconds": 12.0},
+                    "C_full_always": {"success": True, "steps": 3, "vision_calls": 4, "time_seconds": 6.0},
+                },
+            },
+        ],
+    }
+
+    summary = rb.aggregate_repeated_results([payload], bootstrap_samples=0, conditions=["A_baseline", "C_full_always"])
+
+    baseline = summary["conditions"]["A_baseline"]
+    assert baseline["avg_steps"] == 8.0
+    assert baseline["avg_vision_calls"] == 0.0
+    assert baseline["avg_time_seconds"] == 12.0
+    assert baseline["missing_metric_counts"] == {"steps": 1, "vision_calls": 1, "time_seconds": 1}
+
+
+def test_condition_ci_uses_task_name_clusters_not_independent_rows():
+    payload = {
+        "runs": [
+            {
+                "run_id": "r1",
+                "results": [
+                    {
+                        "task": "stable_task",
+                        "category": "dom-rich",
+                        "conditions": {"A_baseline": {"success": True}},
+                    },
+                    {
+                        "task": "flaky_task",
+                        "category": "icon-heavy",
+                        "conditions": {"A_baseline": {"success": False}},
+                    },
+                ],
+            },
+            {
+                "run_id": "r2",
+                "results": [
+                    {
+                        "task": "stable_task",
+                        "category": "dom-rich",
+                        "conditions": {"A_baseline": {"success": True}},
+                    },
+                    {
+                        "task": "flaky_task",
+                        "category": "icon-heavy",
+                        "conditions": {"A_baseline": {"success": True}},
+                    },
+                ],
+            },
+        ]
+    }
+
+    summary = rb.aggregate_repeated_results([payload], bootstrap_samples=0, conditions=["A_baseline"])
+
+    baseline = summary["conditions"]["A_baseline"]
+    assert "task-cluster" in summary["ci_method"]
+    assert baseline["task_clusters"] == 2
+    assert baseline["success_rate_ci95"] == [0.75, 0.75]

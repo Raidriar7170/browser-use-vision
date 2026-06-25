@@ -91,8 +91,8 @@
     <section>
       <h2>本阶段改动</h2>
       <ul>
-        <li>新增 repeated benchmark 聚合工具：支持既有嵌套 ablation JSON、重复运行 wrapper、flat result rows；输出 A_baseline / C_full_always / E_adaptive_full 的成功率均值、bootstrap CI、平均步数、视觉调用、耗时、delta 和 frontier 字段。</li>
-        <li>新增离线 Vision-DOM alignment 工具：从标注 fixture 计算 Top-1 DOM match accuracy、Top-3 recall、unmatched rate、IoU、center-distance error，并按 page 与 element group 拆分。</li>
+        <li>新增 repeated benchmark 聚合工具：支持既有嵌套 ablation JSON、重复运行 wrapper、flat result rows；输出 A_baseline / C_full_always / E_adaptive_full 的成功率均值、task-cluster bootstrap CI、平均步数、视觉调用、耗时、paired delta 和 frontier 字段。</li>
+        <li>新增离线 Vision-DOM alignment 工具：从标注 fixture 计算 Top-1 DOM match accuracy、Top-3 recall、unmatched rate、IoU、top1-correct IoU、center-distance error、normalized center distance，并按 page 与 element group 拆分。</li>
         <li>新增一个小型确定性 sample fixture，可在本地不启动浏览器、LLM 或 Florence 的情况下运行 metric script。</li>
         <li>新增 CPU-only TDD 覆盖：重复 benchmark 聚合、既有 ablation JSON 读取、alignment 指标与 sample fixture 路径。</li>
       </ul>
@@ -122,8 +122,8 @@
     <section>
       <h2>验证结果</h2>
       <ul>
-        <li><code>PYTHONPATH=. pytest tests/test_benchmark_verify.py tests/test_alignment_metrics.py tests/test_repeated_benchmark.py -v --tb=short</code>：35 passed，1 个已知 pytest config warning。</li>
-        <li><code>PYTHONPATH=. pytest -q --tb=short</code>：144 passed，1 个已知 pytest config warning。</li>
+        <li><code>PYTHONPATH=. pytest tests/test_benchmark_verify.py tests/test_alignment_metrics.py tests/test_repeated_benchmark.py -v --tb=short</code>：39 passed，1 个已知 pytest config warning。</li>
+        <li><code>PYTHONPATH=. pytest -q --tb=short</code>：148 passed，1 个已知 pytest config warning。</li>
         <li><code>ruff check scripts/repeated_benchmark.py scripts/vision_dom_alignment.py tests/test_alignment_metrics.py tests/test_repeated_benchmark.py</code>：All checks passed。</li>
         <li><code>PYTHONPATH=. python scripts/vision_dom_alignment.py tests/fixtures/vision_dom_alignment_sample.json</code>：可输出确定性 JSON 指标。</li>
         <li><code>PYTHONPATH=. python scripts/repeated_benchmark.py output/benchmark_results/ablation_results.json --bootstrap-samples 100 --seed 3</code>：可基于既有 ablation JSON 输出 Markdown 汇总。</li>
@@ -133,7 +133,7 @@
     <section>
       <h2>限制与不可过度声明</h2>
       <ul>
-        <li>bootstrap CI 只描述输入文件中的重复样本或单次样本不确定性；它不是新 live benchmark 结果。</li>
+        <li>bootstrap CI 只描述输入文件中的重复样本或单次样本不确定性；它不是新 live benchmark 结果。当前实现使用 task-cluster bootstrap，缺失数值字段不会作为 0 延迟或 0 步数进入均值。</li>
         <li>sample alignment fixture 是小型离线 sanity fixture，不代表真实网页总体表现。</li>
         <li>本阶段没有启动浏览器、LLM、Florence 或 A100，也没有扩大 benchmark headline claim。</li>
         <li>alignment 的几何误差当前按 top-ranked prediction 计算，unmatched 元素不进入 IoU / center-distance 均值。</li>
