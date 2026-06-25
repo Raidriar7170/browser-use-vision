@@ -177,9 +177,7 @@ def _normalize(s: str) -> str:
 
 def _proxied_get_json(url: str, timeout: int = 20):
     proxy = os.environ.get("HTTP_PROXY", "http://127.0.0.1:1097")
-    opener = urllib.request.build_opener(
-        urllib.request.ProxyHandler({"http": proxy, "https": proxy})
-    )
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({"http": proxy, "https": proxy}))
     with opener.open(url, timeout=timeout) as resp:
         return json.loads(resp.read().decode())
 
@@ -402,6 +400,23 @@ class TaskResult:
 AgentBuilder = Callable[[BenchmarkTask, object], object]
 
 
+def _browser_session_kwargs() -> dict[str, object]:
+    kwargs: dict[str, object] = {"headless": True, "keep_alive": True}
+    cdp_url = os.environ.get("BROWSER_USE_CDP_URL")
+    if cdp_url:
+        kwargs["cdp_url"] = cdp_url
+        return kwargs
+
+    executable_path = os.environ.get("BROWSER_USE_EXECUTABLE_PATH")
+    if executable_path:
+        kwargs["executable_path"] = executable_path
+    return kwargs
+
+
+async def _run_agent(agent, task: BenchmarkTask):  # noqa: ANN001
+    return await agent.run(max_steps=task.max_steps)
+
+
 async def _resolve_verify_page(session):
     """Get a live page for post-run verification.
 
@@ -441,7 +456,7 @@ async def run_task(task: BenchmarkTask, build_agent: AgentBuilder, label: str = 
 
     # keep_alive so the browser survives agent.run() for post-run verification;
     # we close it ourselves in the finally block below.
-    session = BrowserSession(headless=True, keep_alive=True)
+    session = BrowserSession(**_browser_session_kwargs())
     start_time = time.time()
     result_text = ""
     steps = 0
@@ -461,7 +476,7 @@ async def run_task(task: BenchmarkTask, build_agent: AgentBuilder, label: str = 
         await page.goto(task.url)
         await asyncio.sleep(3)
 
-        history = await asyncio.wait_for(agent.run(), timeout=task.timeout)
+        history = await asyncio.wait_for(_run_agent(agent, task), timeout=task.timeout)
         result_text = history.final_result() or ""
         steps = history.number_of_steps()
         is_done = history.is_done()
