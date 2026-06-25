@@ -1,0 +1,46 @@
+{
+  "benchmark_name": "sample Vision-DOM alignment fixture",
+  "version": "0.1",
+  "pages": [
+    {
+      "page_id": "icon_toolbar_fixture",
+      "group": "icon-heavy",
+      "elements": [
+        {
+          "element_id": "eraser_button",
+          "bbox": [10, 10, 34, 34],
+          "predictions": [
+            {"element_id": "pencil_button", "bbox": [42, 10, 66, 34], "score": 0.91},
+            {"element_id": "eraser_button", "bbox": [11, 11, 35, 35], "score": 0.72}
+          ]
+        },
+        {
+          "element_id": "settings_button",
+          "bbox": [100, 10, 124, 34],
+          "predictions": []
+        }
+      ]
+    },
+    {
+      "page_id": "text_article_fixture",
+      "group": "text-rich",
+      "elements": [
+        {
+          "element_id": "search_input",
+          "bbox": [0, 0, 120, 24],
+          "predictions": [
+            {"element_id": "search_input", "bbox": [0, 0, 120, 24], "score": 0.99},
+            {"element_id": "newsletter_input", "bbox": [0, 40, 120, 64], "score": 0.25}
+          ]
+        },
+        {
+          "element_id": "submit_button",
+          "bbox": [130, 0, 190, 24],
+          "predictions": [
+            {"element_id": "submit_button", "bbox": [131, 1, 191, 25], "score": 0.95}
+          ]
+        }
+      ]
+    }
+  ]
+}
