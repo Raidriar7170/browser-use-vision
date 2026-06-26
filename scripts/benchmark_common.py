@@ -394,10 +394,38 @@ class TaskResult:
     vision_calls: int = 0
     adaptive_stats: dict = field(default_factory=dict)
     error: str = ""
+    failure_type: str = "none"
 
 
 # build_agent: (task, session) -> agent  (the agent must accept browser_session=session)
 AgentBuilder = Callable[[BenchmarkTask, object], object]
+
+
+class _InternalAgentTimeoutError(Exception):
+    """Raised when the agent stack raises TimeoutError before the outer deadline."""
+
+
+def classify_failure_type(*, success: bool, error: str = "", verify_detail: str = "") -> str:
+    if success:
+        return "none"
+
+    error_low = (error or "").lower()
+    detail_low = (verify_detail or "").lower()
+    if error.startswith("Outer deadline") or error.startswith("Timeout ("):
+        return "outer_deadline"
+    if "timeout" in error_low or "timeouterror" in error_low:
+        return "internal_timeout"
+    if any(token in error_low for token in ("browser", "cdp", "playwright", "chrome")):
+        return "browser_error"
+    if any(token in error_low for token in ("openai", "llm", "rate limit", "api")):
+        return "llm_error"
+    if any(token in error_low for token in ("florence", "vision", "ocr", "caption")):
+        return "vision_error"
+    if error:
+        return "runtime_error"
+    if detail_low.startswith("verify error"):
+        return "verifier_error"
+    return "objective_verification_failed"
 
 
 def _browser_session_kwargs() -> dict[str, object]:
@@ -414,7 +442,10 @@ def _browser_session_kwargs() -> dict[str, object]:
 
 
 async def _run_agent(agent, task: BenchmarkTask):  # noqa: ANN001
-    return await agent.run(max_steps=task.max_steps)
+    try:
+        return await agent.run(max_steps=task.max_steps)
+    except asyncio.TimeoutError as exc:
+        raise _InternalAgentTimeoutError(str(exc)) from exc
 
 
 async def _resolve_verify_page(session):
@@ -464,6 +495,7 @@ async def run_task(task: BenchmarkTask, build_agent: AgentBuilder, label: str = 
     vision_calls = 0
     adaptive_stats: dict = {}
     error_msg = ""
+    failure_type = ""
     success = False
     verify_detail = ""
     agent = None
@@ -494,13 +526,22 @@ async def run_task(task: BenchmarkTask, build_agent: AgentBuilder, label: str = 
                 success = bool(passed)
             except Exception as e:  # noqa: BLE001
                 verify_detail = f"verify error: {e}"
+                failure_type = "verifier_error"
                 success = False
         else:
             success = is_done and steps < task.max_steps
             verify_detail = "no verifier (fallback to is_done)"
 
+        if not success and not failure_type:
+            failure_type = "objective_verification_failed"
+
+    except _InternalAgentTimeoutError as e:
+        detail = str(e).strip()
+        error_msg = f"Internal timeout: {detail}" if detail else "Internal timeout inside agent stack"
+        failure_type = "internal_timeout"
     except asyncio.TimeoutError:
-        error_msg = f"Timeout ({task.timeout}s)"
+        error_msg = f"Outer deadline ({task.timeout}s)"
+        failure_type = "outer_deadline"
         # On timeout the agent kept looping; record the real step count so the
         # report doesn't show a misleading "0 steps" for a task that ran for minutes.
         if agent is not None:
@@ -513,8 +554,10 @@ async def run_task(task: BenchmarkTask, build_agent: AgentBuilder, label: str = 
                     steps = 0
     except Exception as e:  # noqa: BLE001
         error_msg = str(e)[:200]
+        failure_type = classify_failure_type(success=False, error=error_msg)
 
     elapsed = time.time() - start_time
+    failure_type = failure_type or classify_failure_type(success=success, error=error_msg, verify_detail=verify_detail)
 
     try:
         await session.close()
@@ -538,4 +581,5 @@ async def run_task(task: BenchmarkTask, build_agent: AgentBuilder, label: str = 
         vision_calls=vision_calls,
         adaptive_stats=adaptive_stats,
         error=error_msg,
+        failure_type=failure_type,
     )

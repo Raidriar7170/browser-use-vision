@@ -5,6 +5,7 @@
     "E_adaptive_full"
   ],
   "total_records": 144,
+  "total_attempts": 144,
   "bootstrap_samples": 2000,
   "bootstrap_seed": 20260625,
   "ci_method": "task-cluster bootstrap for condition rates; paired task-cluster bootstrap for deltas",
@@ -12,6 +13,7 @@
     "A_baseline": {
       "status": "present",
       "records": 48,
+      "attempts": 48,
       "successes": 17,
       "task_clusters": 16,
       "success_rate_mean": 0.3542,
@@ -26,6 +28,15 @@
         "steps": 0,
         "vision_calls": 0,
         "time_seconds": 0
+      },
+      "zero_step_count": 21,
+      "infra_failure_count": 23,
+      "eligible_attempt_count": 25,
+      "completion_rate": 0.5208,
+      "failure_type_counts": {
+        "none": 17,
+        "objective_verification_failed": 8,
+        "outer_deadline": 23
       },
       "category_breakdown": {
         "dom-rich": {
@@ -75,27 +86,27 @@
       },
       "paired_blocks_vs_A_baseline": 16,
       "delta_vs_C_full_always": {
-        "success_rate": -0.0625,
-        "steps": -1.1875,
-        "vision_calls": -0.875,
-        "time_seconds": -45.3312
+        "success_rate": -0.020833333333333336,
+        "steps": 0.1667,
+        "vision_calls": -1.3333,
+        "time_seconds": -33.5167
       },
       "delta_vs_C_full_always_ci95": {
         "success_rate": [
-          -0.375,
-          0.25
+          -0.25,
+          0.1667
         ],
         "steps": [
-          -2.3125,
-          -0.25
+          -0.625,
+          0.8333
         ],
         "vision_calls": [
-          -1.375,
-          -0.375
+          -2.1458,
+          -0.7083
         ],
         "time_seconds": [
-          -89.7375,
-          -11.4375
+          -68.4229,
+          -11.3021
         ]
       },
       "paired_blocks_vs_C_full_always": 16
@@ -103,6 +114,7 @@
     "C_full_always": {
       "status": "present",
       "records": 48,
+      "attempts": 48,
       "successes": 18,
       "task_clusters": 16,
       "success_rate_mean": 0.375,
@@ -117,6 +129,15 @@
         "steps": 0,
         "vision_calls": 0,
         "time_seconds": 0
+      },
+      "zero_step_count": 17,
+      "infra_failure_count": 21,
+      "eligible_attempt_count": 27,
+      "completion_rate": 0.5625,
+      "failure_type_counts": {
+        "none": 18,
+        "objective_verification_failed": 9,
+        "outer_deadline": 21
       },
       "category_breakdown": {
         "dom-rich": {
@@ -141,27 +162,27 @@
         "vision_call_savings_vs_C_full_always": 0.0
       },
       "delta_vs_A_baseline": {
-        "success_rate": 0.0625,
-        "steps": 1.1875,
-        "vision_calls": 0.875,
-        "time_seconds": 45.3312
+        "success_rate": 0.020833333333333336,
+        "steps": -0.1667,
+        "vision_calls": 1.3333,
+        "time_seconds": 33.5167
       },
       "delta_vs_A_baseline_ci95": {
         "success_rate": [
-          -0.25,
-          0.375
+          -0.1667,
+          0.2292
         ],
         "steps": [
-          0.1875,
-          2.25
+          -0.8333,
+          0.5833
         ],
         "vision_calls": [
-          0.375,
-          1.375
+          0.6667,
+          2.1042
         ],
         "time_seconds": [
-          10.925,
-          90.125
+          10.8625,
+          67.5146
         ]
       },
       "paired_blocks_vs_A_baseline": 16,
@@ -194,6 +215,7 @@
     "E_adaptive_full": {
       "status": "present",
       "records": 48,
+      "attempts": 48,
       "successes": 14,
       "task_clusters": 16,
       "success_rate_mean": 0.2917,
@@ -208,6 +230,15 @@
         "steps": 0,
         "vision_calls": 0,
         "time_seconds": 0
+      },
+      "zero_step_count": 24,
+      "infra_failure_count": 25,
+      "eligible_attempt_count": 23,
+      "completion_rate": 0.4792,
+      "failure_type_counts": {
+        "none": 14,
+        "objective_verification_failed": 9,
+        "outer_deadline": 25
       },
       "category_breakdown": {
         "dom-rich": {
@@ -232,52 +263,52 @@
         "vision_call_savings_vs_C_full_always": 0.2916
       },
       "delta_vs_A_baseline": {
-        "success_rate": 0.0625,
-        "steps": 2.25,
-        "vision_calls": 1.125,
-        "time_seconds": 58.4313
+        "success_rate": -0.0625,
+        "steps": -0.25,
+        "vision_calls": 1.0417,
+        "time_seconds": 26.0312
       },
       "delta_vs_A_baseline_ci95": {
         "success_rate": [
-          -0.1875,
-          0.3125
+          -0.3125,
+          0.1875
         ],
         "steps": [
-          0.875,
-          3.8125
+          -0.8125,
+          0.3542
         ],
         "vision_calls": [
-          0.3125,
-          2.3125
+          0.375,
+          1.8333
         ],
         "time_seconds": [
-          23.5813,
-          100.4813
+          10.4583,
+          48.0375
         ]
       },
       "paired_blocks_vs_A_baseline": 16,
       "delta_vs_C_full_always": {
-        "success_rate": 0.0,
-        "steps": 1.0625,
-        "vision_calls": 0.25,
-        "time_seconds": 13.1
+        "success_rate": -0.08333333333333333,
+        "steps": -0.0833,
+        "vision_calls": -0.2917,
+        "time_seconds": -7.4854
       },
       "delta_vs_C_full_always_ci95": {
         "success_rate": [
-          -0.3125,
-          0.375
+          -0.2083,
+          0.0625
         ],
         "steps": [
-          -0.3125,
-          2.375
+          -0.6042,
+          0.5
         ],
         "vision_calls": [
-          -0.4375,
-          1.1875
+          -0.8333,
+          0.2292
         ],
         "time_seconds": [
-          -7.6125,
-          37.5312
+          -23.1146,
+          5.3583
         ]
       },
       "paired_blocks_vs_C_full_always": 16

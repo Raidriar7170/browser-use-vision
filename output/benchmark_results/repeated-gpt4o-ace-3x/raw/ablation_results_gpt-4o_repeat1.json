@@ -28,7 +28,8 @@
           "vision_calls": 0,
           "verify_detail": "dom_js(document.getElementById('result') && document.getElementById('result').textContent.toLowerCase().includes('next')) -> 'False'",
           "is_done": true,
-          "error": null
+          "error": null,
+          "failure_type": "objective_verification_failed"
         },
         "C_full_always": {
           "success": false,
@@ -37,7 +38,8 @@
           "vision_calls": 2,
           "verify_detail": "dom_js(document.getElementById('result') && document.getElementById('result').textContent.toLowerCase().includes('next')) -> 'False'",
           "is_done": true,
-          "error": null
+          "error": null,
+          "failure_type": "objective_verification_failed"
         },
         "E_adaptive_full": {
           "success": false,
@@ -46,7 +48,8 @@
           "vision_calls": 2,
           "verify_detail": "dom_js(document.getElementById('result') && document.getElementById('result').textContent.toLowerCase().includes('next')) -> 'False'",
           "is_done": true,
-          "error": null
+          "error": null,
+          "failure_type": "objective_verification_failed"
         }
       }
     },
@@ -61,7 +64,8 @@
           "vision_calls": 0,
           "verify_detail": "dom_js(document.querySelector('.color-swatch.selected') && document.querySelector('.color-swatch.selected').dataset.color==='green' && Array.isArray(window.actions) && window.actions.includes('apply')) -> 'False'",
           "is_done": true,
-          "error": null
+          "error": null,
+          "failure_type": "objective_verification_failed"
         },
         "C_full_always": {
           "success": true,
@@ -70,7 +74,8 @@
           "vision_calls": 3,
           "verify_detail": "dom_js(document.querySelector('.color-swatch.selected') && document.querySelector('.color-swatch.selected').dataset.color==='green' && Array.isArray(window.actions) && window.actions.includes('apply')) -> 'True'",
           "is_done": true,
-          "error": null
+          "error": null,
+          "failure_type": "none"
         },
         "E_adaptive_full": {
           "success": true,
@@ -79,7 +84,8 @@
           "vision_calls": 2,
           "verify_detail": "dom_js(document.querySelector('.color-swatch.selected') && document.querySelector('.color-swatch.selected').dataset.color==='green' && Array.isArray(window.actions) && window.actions.includes('apply')) -> 'True'",
           "is_done": true,
-          "error": null
+          "error": null,
+          "failure_type": "none"
         }
       }
     },
@@ -94,7 +100,8 @@
           "vision_calls": 0,
           "verify_detail": "dom_js(document.querySelector('.tool-btn.active') && document.querySelector('.tool-btn.active').dataset.tool==='eraser') -> 'False'",
           "is_done": true,
-          "error": null
+          "error": null,
+          "failure_type": "objective_verification_failed"
         },
         "C_full_always": {
           "success": false,
@@ -103,7 +110,8 @@
           "vision_calls": 2,
           "verify_detail": "dom_js(document.querySelector('.tool-btn.active') && document.querySelector('.tool-btn.active').dataset.tool==='eraser') -> 'False'",
           "is_done": true,
-          "error": null
+          "error": null,
+          "failure_type": "objective_verification_failed"
         },
         "E_adaptive_full": {
           "success": true,
@@ -112,7 +120,8 @@
           "vision_calls": 2,
           "verify_detail": "dom_js(document.querySelector('.tool-btn.active') && document.querySelector('.tool-btn.active').dataset.tool==='eraser') -> 'True'",
           "is_done": true,
-          "error": null
+          "error": null,
+          "failure_type": "none"
         }
       }
     },
@@ -127,7 +136,8 @@
           "vision_calls": 0,
           "verify_detail": "dom_js(document.querySelectorAll('.post')[0] && document.querySelectorAll('.post')[0].querySelector('.action-btn.liked')!==null) -> 'True'",
           "is_done": true,
-          "error": null
+          "error": null,
+          "failure_type": "none"
         },
         "C_full_always": {
           "success": true,
@@ -136,7 +146,8 @@
           "vision_calls": 2,
           "verify_detail": "dom_js(document.querySelectorAll('.post')[0] && document.querySelectorAll('.post')[0].querySelector('.action-btn.liked')!==null) -> 'True'",
           "is_done": true,
-          "error": null
+          "error": null,
+          "failure_type": "none"
         },
         "E_adaptive_full": {
           "success": true,
@@ -145,7 +156,8 @@
           "vision_calls": 2,
           "verify_detail": "dom_js(document.querySelectorAll('.post')[0] && document.querySelectorAll('.post')[0].querySelector('.action-btn.liked')!==null) -> 'True'",
           "is_done": true,
-          "error": null
+          "error": null,
+          "failure_type": "none"
         }
       }
     },
@@ -160,7 +172,8 @@
           "vision_calls": 0,
           "verify_detail": "dom_js(document.querySelector('.color-swatch.selected') && document.querySelector('.color-swatch.selected').dataset.color==='blue') -> 'False'",
           "is_done": true,
-          "error": null
+          "error": null,
+          "failure_type": "objective_verification_failed"
         },
         "C_full_always": {
           "success": true,
@@ -169,7 +182,8 @@
           "vision_calls": 7,
           "verify_detail": "dom_js(document.querySelector('.color-swatch.selected') && document.querySelector('.color-swatch.selected').dataset.color==='blue') -> 'True'",
           "is_done": true,
-          "error": null
+          "error": null,
+          "failure_type": "none"
         },
         "E_adaptive_full": {
           "success": true,
@@ -178,7 +192,8 @@
           "vision_calls": 2,
           "verify_detail": "dom_js(document.querySelector('.color-swatch.selected') && document.querySelector('.color-swatch.selected').dataset.color==='blue') -> 'True'",
           "is_done": true,
-          "error": null
+          "error": null,
+          "failure_type": "none"
         }
       }
     },
@@ -193,7 +208,8 @@
           "vision_calls": 0,
           "verify_detail": "dom_js(document.querySelector('.chart-tab.active') && document.querySelector('.chart-tab.active').textContent.trim()==='Monthly') -> 'True'",
           "is_done": true,
-          "error": null
+          "error": null,
+          "failure_type": "none"
         },
         "C_full_always": {
           "success": true,
@@ -202,7 +218,8 @@
           "vision_calls": 2,
           "verify_detail": "dom_js(document.querySelector('.chart-tab.active') && document.querySelector('.chart-tab.active').textContent.trim()==='Monthly') -> 'True'",
           "is_done": true,
-          "error": null
+          "error": null,
+          "failure_type": "none"
         },
         "E_adaptive_full": {
           "success": true,
@@ -211,7 +228,8 @@
           "vision_calls": 0,
           "verify_detail": "dom_js(document.querySelector('.chart-tab.active') && document.querySelector('.chart-tab.active').textContent.trim()==='Monthly') -> 'True'",
           "is_done": true,
-          "error": null
+          "error": null,
+          "failure_type": "none"
         }
       }
     },
@@ -226,7 +244,8 @@
           "vision_calls": 0,
           "verify_detail": "",
           "is_done": false,
-          "error": "Timeout (240s)"
+          "error": "Timeout (240s)",
+          "failure_type": "outer_deadline"
         },
         "C_full_always": {
           "success": false,
@@ -235,7 +254,8 @@
           "vision_calls": 0,
           "verify_detail": "",
           "is_done": false,
-          "error": "Timeout (240s)"
+          "error": "Timeout (240s)",
+          "failure_type": "outer_deadline"
         },
         "E_adaptive_full": {
           "success": false,
@@ -244,7 +264,8 @@
           "vision_calls": 2,
           "verify_detail": "url='https://en.wikipedia.org/wiki/Artificial_intelligence' expected~['Machine_learning']",
           "is_done": true,
-          "error": null
+          "error": null,
+          "failure_type": "objective_verification_failed"
         }
       }
     },
@@ -259,7 +280,8 @@
           "vision_calls": 0,
           "verify_detail": "",
           "is_done": false,
-          "error": "Timeout (240s)"
+          "error": "Timeout (240s)",
+          "failure_type": "outer_deadline"
         },
         "C_full_always": {
           "success": false,
@@ -268,7 +290,8 @@
           "vision_calls": 2,
           "verify_detail": "url='https://www.google.com/search?q=Alan+Turing+Wikipedia&udm=14' expected~['Alan_Turing']",
           "is_done": false,
-          "error": null
+          "error": null,
+          "failure_type": "objective_verification_failed"
         },
         "E_adaptive_full": {
           "success": false,
@@ -277,7 +300,8 @@
           "vision_calls": 0,
           "verify_detail": "",
           "is_done": false,
-          "error": "Timeout (240s)"
+          "error": "Timeout (240s)",
+          "failure_type": "outer_deadline"
         }
       }
     },
@@ -292,7 +316,8 @@
           "vision_calls": 0,
           "verify_detail": "",
           "is_done": false,
-          "error": "Timeout (240s)"
+          "error": "Timeout (240s)",
+          "failure_type": "outer_deadline"
         },
         "C_full_always": {
           "success": false,
@@ -301,7 +326,8 @@
           "vision_calls": 0,
           "verify_detail": "",
           "is_done": false,
-          "error": "Timeout (240s)"
+          "error": "Timeout (240s)",
+          "failure_type": "outer_deadline"
         },
         "E_adaptive_full": {
           "success": false,
@@ -310,7 +336,8 @@
           "vision_calls": 0,
           "verify_detail": "",
           "is_done": false,
-          "error": "Timeout (240s)"
+          "error": "Timeout (240s)",
+          "failure_type": "outer_deadline"
         }
       }
     },
@@ -325,7 +352,8 @@
           "vision_calls": 0,
           "verify_detail": "",
           "is_done": false,
-          "error": "Timeout (240s)"
+          "error": "Timeout (240s)",
+          "failure_type": "outer_deadline"
         },
         "C_full_always": {
           "success": true,
@@ -334,7 +362,8 @@
           "vision_calls": 2,
           "verify_detail": "url='https://arxiv.org/search/?query=vision+language+model&searchtype=all&source=header' expected~['/search/']",
           "is_done": true,
-          "error": null
+          "error": null,
+          "failure_type": "none"
         },
         "E_adaptive_full": {
           "success": false,
@@ -343,7 +372,8 @@
           "vision_calls": 0,
           "verify_detail": "",
           "is_done": false,
-          "error": "Timeout (240s)"
+          "error": "Timeout (240s)",
+          "failure_type": "outer_deadline"
         }
       }
     },
@@ -358,7 +388,8 @@
           "vision_calls": 0,
           "verify_detail": "result expected~['albert einstein'] (got 72 chars)",
           "is_done": true,
-          "error": null
+          "error": null,
+          "failure_type": "none"
         },
         "C_full_always": {
           "success": true,
@@ -367,7 +398,8 @@
           "vision_calls": 1,
           "verify_detail": "result expected~['albert einstein'] (got 66 chars)",
           "is_done": true,
-          "error": null
+          "error": null,
+          "failure_type": "none"
         },
         "E_adaptive_full": {
           "success": false,
@@ -376,7 +408,8 @@
           "vision_calls": 0,
           "verify_detail": "",
           "is_done": false,
-          "error": "Timeout (240s)"
+          "error": "Timeout (240s)",
+          "failure_type": "outer_deadline"
         }
       }
     },
@@ -391,7 +424,8 @@
           "vision_calls": 0,
           "verify_detail": "result expected~['gide'] (got 62 chars)",
           "is_done": true,
-          "error": null
+          "error": null,
+          "failure_type": "none"
         },
         "C_full_always": {
           "success": true,
@@ -400,7 +434,8 @@
           "vision_calls": 2,
           "verify_detail": "result expected~['gide'] (got 65 chars)",
           "is_done": true,
-          "error": null
+          "error": null,
+          "failure_type": "none"
         },
         "E_adaptive_full": {
           "success": false,
@@ -409,7 +444,8 @@
           "vision_calls": 0,
           "verify_detail": "",
           "is_done": false,
-          "error": "Timeout (240s)"
+          "error": "Timeout (240s)",
+          "failure_type": "outer_deadline"
         }
       }
     },
@@ -424,7 +460,8 @@
           "vision_calls": 0,
           "verify_detail": "result expected~['51.77'] (got 62 chars)",
           "is_done": true,
-          "error": null
+          "error": null,
+          "failure_type": "none"
         },
         "C_full_always": {
           "success": true,
@@ -433,7 +470,8 @@
           "vision_calls": 1,
           "verify_detail": "result expected~['51.77'] (got 62 chars)",
           "is_done": true,
-          "error": null
+          "error": null,
+          "failure_type": "none"
         },
         "E_adaptive_full": {
           "success": false,
@@ -442,7 +480,8 @@
           "vision_calls": 0,
           "verify_detail": "",
           "is_done": false,
-          "error": "Timeout (240s)"
+          "error": "Timeout (240s)",
+          "failure_type": "outer_deadline"
         }
       }
     },
@@ -457,7 +496,8 @@
           "vision_calls": 0,
           "verify_detail": "result expected~['himalayas'] (got 87 chars)",
           "is_done": true,
-          "error": null
+          "error": null,
+          "failure_type": "none"
         },
         "C_full_always": {
           "success": true,
@@ -466,7 +506,8 @@
           "vision_calls": 2,
           "verify_detail": "result expected~['himalayas'] (got 89 chars)",
           "is_done": true,
-          "error": null
+          "error": null,
+          "failure_type": "none"
         },
         "E_adaptive_full": {
           "success": false,
@@ -475,7 +516,8 @@
           "vision_calls": 0,
           "verify_detail": "",
           "is_done": false,
-          "error": "Timeout (240s)"
+          "error": "Timeout (240s)",
+          "failure_type": "outer_deadline"
         }
       }
     },
@@ -490,7 +532,8 @@
           "vision_calls": 0,
           "verify_detail": "",
           "is_done": false,
-          "error": "Timeout (240s)"
+          "error": "Timeout (240s)",
+          "failure_type": "outer_deadline"
         },
         "C_full_always": {
           "success": false,
@@ -499,7 +542,8 @@
           "vision_calls": 0,
           "verify_detail": "",
           "is_done": false,
-          "error": "Timeout (240s)"
+          "error": "Timeout (240s)",
+          "failure_type": "outer_deadline"
         },
         "E_adaptive_full": {
           "success": false,
@@ -508,7 +552,8 @@
           "vision_calls": 0,
           "verify_detail": "",
           "is_done": false,
-          "error": "Timeout (240s)"
+          "error": "Timeout (240s)",
+          "failure_type": "outer_deadline"
         }
       }
     },
@@ -523,7 +568,8 @@
           "vision_calls": 0,
           "verify_detail": "",
           "is_done": false,
-          "error": "Timeout (240s)"
+          "error": "Timeout (240s)",
+          "failure_type": "outer_deadline"
         },
         "C_full_always": {
           "success": false,
@@ -532,7 +578,8 @@
           "vision_calls": 0,
           "verify_detail": "",
           "is_done": false,
-          "error": "Timeout (240s)"
+          "error": "Timeout (240s)",
+          "failure_type": "outer_deadline"
         },
         "E_adaptive_full": {
           "success": false,
@@ -541,90 +588,239 @@
           "vision_calls": 0,
           "verify_detail": "",
           "is_done": false,
-          "error": "Timeout (240s)"
+          "error": "Timeout (240s)",
+          "failure_type": "outer_deadline"
         }
       }
     }
   ],
   "summary": {
+    "conditions_run": [
+      "A_baseline",
+      "C_full_always",
+      "E_adaptive_full"
+    ],
     "by_condition": {
       "A_baseline": {
+        "status": "present",
         "success_rate": 0.375,
         "successes": 6,
         "total": 16,
+        "attempts": 16,
         "avg_steps": 2.94,
         "avg_time": 47.7,
-        "total_vision_calls": 0
+        "total_vision_calls": 0,
+        "zero_step_count": 5,
+        "infra_failure_count": 6,
+        "eligible_attempt_count": 10,
+        "completion_rate": 0.625,
+        "failure_type_counts": {
+          "none": 6,
+          "objective_verification_failed": 4,
+          "outer_deadline": 6
+        }
+      },
+      "B_som_only": {
+        "status": "not_run",
+        "success_rate": null,
+        "successes": 0,
+        "total": 0,
+        "attempts": 0,
+        "avg_steps": null,
+        "avg_time": null,
+        "total_vision_calls": null,
+        "zero_step_count": 0,
+        "infra_failure_count": 0,
+        "eligible_attempt_count": 0,
+        "completion_rate": null,
+        "failure_type_counts": {}
       },
       "C_full_always": {
+        "status": "present",
         "success_rate": 0.562,
         "successes": 9,
         "total": 16,
+        "attempts": 16,
         "avg_steps": 2.12,
         "avg_time": 74.4,
-        "total_vision_calls": 28
+        "total_vision_calls": 28,
+        "zero_step_count": 3,
+        "infra_failure_count": 4,
+        "eligible_attempt_count": 12,
+        "completion_rate": 0.75,
+        "failure_type_counts": {
+          "none": 9,
+          "objective_verification_failed": 3,
+          "outer_deadline": 4
+        }
+      },
+      "D_ocr_only": {
+        "status": "not_run",
+        "success_rate": null,
+        "successes": 0,
+        "total": 0,
+        "attempts": 0,
+        "avg_steps": null,
+        "avg_time": null,
+        "total_vision_calls": null,
+        "zero_step_count": 0,
+        "infra_failure_count": 0,
+        "eligible_attempt_count": 0,
+        "completion_rate": null,
+        "failure_type_counts": {}
       },
       "E_adaptive_full": {
+        "status": "present",
         "success_rate": 0.312,
         "successes": 5,
         "total": 16,
+        "attempts": 16,
         "avg_steps": 1.12,
         "avg_time": 63.1,
-        "total_vision_calls": 12
+        "total_vision_calls": 12,
+        "zero_step_count": 8,
+        "infra_failure_count": 9,
+        "eligible_attempt_count": 7,
+        "completion_rate": 0.438,
+        "failure_type_counts": {
+          "none": 5,
+          "objective_verification_failed": 2,
+          "outer_deadline": 9
+        }
+      },
+      "F_adaptive_no_som": {
+        "status": "not_run",
+        "success_rate": null,
+        "successes": 0,
+        "total": 0,
+        "attempts": 0,
+        "avg_steps": null,
+        "avg_time": null,
+        "total_vision_calls": null,
+        "zero_step_count": 0,
+        "infra_failure_count": 0,
+        "eligible_attempt_count": 0,
+        "completion_rate": null,
+        "failure_type_counts": {}
       }
     },
     "by_category": {
       "icon-heavy": {
         "A_baseline": {
+          "status": "present",
           "success_rate": 0.25,
           "successes": 1,
           "total": 4
         },
+        "B_som_only": {
+          "status": "not_run",
+          "success_rate": null,
+          "successes": 0,
+          "total": 0
+        },
         "C_full_always": {
+          "status": "present",
           "success_rate": 0.5,
           "successes": 2,
           "total": 4
         },
+        "D_ocr_only": {
+          "status": "not_run",
+          "success_rate": null,
+          "successes": 0,
+          "total": 0
+        },
         "E_adaptive_full": {
+          "status": "present",
           "success_rate": 0.75,
           "successes": 3,
           "total": 4
+        },
+        "F_adaptive_no_som": {
+          "status": "not_run",
+          "success_rate": null,
+          "successes": 0,
+          "total": 0
         }
       },
       "mixed": {
         "A_baseline": {
+          "status": "present",
           "success_rate": 0.2,
           "successes": 1,
           "total": 5
         },
+        "B_som_only": {
+          "status": "not_run",
+          "success_rate": null,
+          "successes": 0,
+          "total": 0
+        },
         "C_full_always": {
+          "status": "present",
           "success_rate": 0.4,
           "successes": 2,
           "total": 5
         },
+        "D_ocr_only": {
+          "status": "not_run",
+          "success_rate": null,
+          "successes": 0,
+          "total": 0
+        },
         "E_adaptive_full": {
+          "status": "present",
           "success_rate": 0.2,
           "successes": 1,
           "total": 5
+        },
+        "F_adaptive_no_som": {
+          "status": "not_run",
+          "success_rate": null,
+          "successes": 0,
+          "total": 0
         }
       },
       "dom-rich": {
         "A_baseline": {
+          "status": "present",
           "success_rate": 0.571,
           "successes": 4,
           "total": 7
         },
+        "B_som_only": {
+          "status": "not_run",
+          "success_rate": null,
+          "successes": 0,
+          "total": 0
+        },
         "C_full_always": {
+          "status": "present",
           "success_rate": 0.714,
           "successes": 5,
           "total": 7
         },
+        "D_ocr_only": {
+          "status": "not_run",
+          "success_rate": null,
+          "successes": 0,
+          "total": 0
+        },
         "E_adaptive_full": {
+          "status": "present",
           "success_rate": 0.143,
           "successes": 1,
           "total": 7
+        },
+        "F_adaptive_no_som": {
+          "status": "not_run",
+          "success_rate": null,
+          "successes": 0,
+          "total": 0
         }
       }
     }
-  }
+  },
+  "run_id": "gpt-4o-ace-repeat1",
+  "record_type": "benchmark attempts"
 }

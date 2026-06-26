@@ -15,6 +15,15 @@ from pathlib import Path
 from typing import Any
 
 TRIAD_CONDITIONS = ["A_baseline", "C_full_always", "E_adaptive_full"]
+INFRA_FAILURE_TYPES = {
+    "outer_deadline",
+    "internal_timeout",
+    "browser_error",
+    "llm_error",
+    "vision_error",
+    "verifier_error",
+    "runtime_error",
+}
 
 
 def _mean(values: list[float]) -> float:
@@ -77,6 +86,34 @@ def _metric_value(metrics: dict[str, Any], *names: str, default: float | None = 
     return default
 
 
+def _failure_type(metrics: dict[str, Any]) -> str:
+    existing = metrics.get("failure_type")
+    if existing:
+        return str(existing)
+    if bool(metrics.get("success", False)):
+        return "none"
+
+    error = str(metrics.get("error") or "")
+    detail = str(metrics.get("verify_detail") or "")
+    error_low = error.lower()
+    detail_low = detail.lower()
+    if error.startswith("Timeout (") or error_low.startswith("outer deadline"):
+        return "outer_deadline"
+    if "timeout" in error_low or "timeouterror" in error_low:
+        return "internal_timeout"
+    if any(token in error_low for token in ("browser", "cdp", "playwright", "chrome")):
+        return "browser_error"
+    if any(token in error_low for token in ("openai", "llm", "rate limit", "api")):
+        return "llm_error"
+    if any(token in error_low for token in ("florence", "vision", "ocr", "caption")):
+        return "vision_error"
+    if error:
+        return "runtime_error"
+    if detail_low.startswith("verify error"):
+        return "verifier_error"
+    return "objective_verification_failed"
+
+
 def _record_from_metrics(
     *,
     condition: str,
@@ -96,6 +133,7 @@ def _record_from_metrics(
         "steps": _metric_value(metrics, "steps"),
         "vision_calls": _metric_value(metrics, "vision_calls", "total_vision_calls"),
         "time_seconds": _metric_value(metrics, "time_seconds", "latency_seconds", "avg_time", "duration_seconds"),
+        "failure_type": _failure_type(metrics),
     }
 
 
@@ -108,7 +146,7 @@ def _normalize_payload(payload: dict[str, Any], *, source: str | None = None, ru
             records.extend(_normalize_payload(run, source=source, run_prefix=run_id))
         return records
 
-    run_id = str(payload.get("run_id") or payload.get("id") or payload.get("date") or run_prefix)
+    run_id = str(payload.get("run_id") or payload.get("id") or (Path(source).stem if source else run_prefix))
     raw_results = payload.get("results") or payload.get("records") or []
     for item in raw_results:
         if not isinstance(item, dict):
@@ -144,6 +182,20 @@ def _normalize_payload(payload: dict[str, Any], *, source: str | None = None, ru
             )
 
     return records
+
+
+def _validate_unique_records(records: list[dict]) -> None:
+    seen: dict[tuple[str, str, str], str | None] = {}
+    for record in records:
+        key = (str(record["run_id"]), str(record["task_name"]), str(record["condition"]))
+        if key in seen:
+            run_id, task_name, condition = key
+            raise ValueError(
+                "duplicate benchmark record for "
+                f"run_id={run_id!r}, task_name={task_name!r}, condition={condition!r} "
+                f"(sources: {seen[key]!r}, {record.get('source')!r})"
+            )
+        seen[key] = record.get("source")
 
 
 def _category_breakdown(records: list[dict]) -> dict[str, dict[str, Any]]:
@@ -185,12 +237,18 @@ def _condition_summary(records: list[dict], *, bootstrap_samples: int, seed: int
         return {
             "status": "missing",
             "records": 0,
+            "attempts": 0,
             "successes": 0,
             "success_rate_mean": None,
             "success_rate_ci95": [None, None],
             "avg_steps": None,
             "avg_vision_calls": None,
             "avg_time_seconds": None,
+            "zero_step_count": 0,
+            "infra_failure_count": 0,
+            "eligible_attempt_count": 0,
+            "completion_rate": None,
+            "failure_type_counts": {},
             "category_breakdown": {},
             "frontier": {
                 "success_per_vision_call": None,
@@ -209,9 +267,18 @@ def _condition_summary(records: list[dict], *, bootstrap_samples: int, seed: int
     missing_metric_counts = {
         name: sum(1 for row in records if row[name] is None) for name in ("steps", "vision_calls", "time_seconds")
     }
+    zero_step_count = sum(1 for row in records if row["steps"] == 0)
+    failure_type_counts: dict[str, int] = defaultdict(int)
+    for row in records:
+        failure_type_counts[str(row.get("failure_type") or "none")] += 1
+    infra_failure_count = sum(
+        count for failure_type, count in failure_type_counts.items() if failure_type in INFRA_FAILURE_TYPES
+    )
+    eligible_attempt_count = total - infra_failure_count
     return {
         "status": "present",
         "records": total,
+        "attempts": total,
         "successes": success_count,
         "task_clusters": len(success_clusters),
         "success_rate_mean": _round(success_rate),
@@ -220,6 +287,11 @@ def _condition_summary(records: list[dict], *, bootstrap_samples: int, seed: int
         "avg_vision_calls": _round(avg_vision),
         "avg_time_seconds": _round(avg_time),
         "missing_metric_counts": missing_metric_counts,
+        "zero_step_count": zero_step_count,
+        "infra_failure_count": infra_failure_count,
+        "eligible_attempt_count": eligible_attempt_count,
+        "completion_rate": _round(eligible_attempt_count / total if total else 0.0),
+        "failure_type_counts": dict(sorted(failure_type_counts.items())),
         "category_breakdown": _category_breakdown(records),
         "frontier": {
             "success_per_vision_call": _round(success_rate / avg_vision) if avg_vision and avg_vision > 0 else None,
@@ -263,7 +335,7 @@ def _paired_delta(
     time_deltas = [_mean(values["time_seconds"]) for values in grouped.values() if values["time_seconds"]]
 
     point = {
-        "success_rate": _round(_mean(success_deltas)),
+        "success_rate": _mean(success_deltas),
         "steps": _round(_mean(step_deltas)) if step_deltas else None,
         "vision_calls": _round(_mean(vision_deltas)) if vision_deltas else None,
         "time_seconds": _round(_mean(time_deltas)) if time_deltas else None,
@@ -293,7 +365,7 @@ def _delta(current: dict[str, Any], baseline: dict[str, Any] | None) -> dict[str
         return _round(current[name] - baseline[name])
 
     return {
-        "success_rate": _round(current["success_rate_mean"] - baseline["success_rate_mean"]),
+        "success_rate": current["success_rate_mean"] - baseline["success_rate_mean"],
         "steps": _metric_delta("avg_steps"),
         "vision_calls": _metric_delta("avg_vision_calls"),
         "time_seconds": _metric_delta("avg_time_seconds"),
@@ -335,26 +407,17 @@ def _mark_pareto_frontier(condition_summaries: dict[str, dict[str, Any]]) -> Non
         current["frontier"]["is_pareto_candidate"] = not dominated
 
 
-def aggregate_repeated_results(
-    payloads: list[dict[str, Any]],
-    bootstrap_samples: int = 1000,
-    seed: int = 0,
-    conditions: list[str] | None = None,
+def _aggregate_records(
+    all_records: list[dict],
+    *,
+    bootstrap_samples: int,
+    seed: int,
+    conditions: list[str],
 ) -> dict[str, Any]:
-    """Aggregate one or more benchmark payloads.
+    _validate_unique_records(all_records)
 
-    Supported inputs:
-    - existing ablation JSON: ``results[].conditions[condition]``
-    - repeated wrapper JSON: ``runs[].results``
-    - flat result rows: ``results[]`` or ``records[]`` with ``condition``/``label``
-    """
-    wanted = conditions or TRIAD_CONDITIONS
-    all_records: list[dict] = []
-    for idx, payload in enumerate(payloads):
-        all_records.extend(_normalize_payload(payload, run_prefix=f"run-{idx + 1}"))
-
-    filtered = [record for record in all_records if record["condition"] in wanted]
-    by_condition = {condition: [] for condition in wanted}
+    filtered = [record for record in all_records if record["condition"] in conditions]
+    by_condition = {condition: [] for condition in conditions}
     for record in filtered:
         by_condition[record["condition"]].append(record)
 
@@ -399,13 +462,34 @@ def aggregate_repeated_results(
 
     _mark_pareto_frontier(condition_summaries)
     return {
-        "conditions_order": wanted,
+        "conditions_order": conditions,
         "total_records": len(filtered),
+        "total_attempts": len(filtered),
         "bootstrap_samples": bootstrap_samples,
         "bootstrap_seed": seed,
         "ci_method": "task-cluster bootstrap for condition rates; paired task-cluster bootstrap for deltas",
         "conditions": condition_summaries,
     }
+
+
+def aggregate_repeated_results(
+    payloads: list[dict[str, Any]],
+    bootstrap_samples: int = 1000,
+    seed: int = 0,
+    conditions: list[str] | None = None,
+) -> dict[str, Any]:
+    """Aggregate one or more benchmark payloads.
+
+    Supported inputs:
+    - existing ablation JSON: ``results[].conditions[condition]``
+    - repeated wrapper JSON: ``runs[].results``
+    - flat result rows: ``results[]`` or ``records[]`` with ``condition``/``label``
+    """
+    wanted = conditions or TRIAD_CONDITIONS
+    all_records: list[dict] = []
+    for idx, payload in enumerate(payloads):
+        all_records.extend(_normalize_payload(payload, run_prefix=f"run-{idx + 1}"))
+    return _aggregate_records(all_records, bootstrap_samples=bootstrap_samples, seed=seed, conditions=wanted)
 
 
 def aggregate_repeated_result_files(
@@ -414,19 +498,21 @@ def aggregate_repeated_result_files(
     seed: int = 0,
     conditions: list[str] | None = None,
 ) -> dict[str, Any]:
-    payloads = []
+    all_records: list[dict] = []
     source_files = []
-    for path_like in paths:
+    wanted = conditions or TRIAD_CONDITIONS
+    for idx, path_like in enumerate(paths):
         path = Path(path_like)
         source_files.append(str(path))
         with path.open("r", encoding="utf-8") as fh:
-            payloads.append(json.load(fh))
+            payload = json.load(fh)
+        all_records.extend(_normalize_payload(payload, source=str(path), run_prefix=f"run-{idx + 1}"))
 
-    summary = aggregate_repeated_results(
-        payloads,
+    summary = _aggregate_records(
+        all_records,
         bootstrap_samples=bootstrap_samples,
         seed=seed,
-        conditions=conditions,
+        conditions=wanted,
     )
     summary["source_files"] = source_files
     return summary
@@ -451,14 +537,17 @@ def build_markdown_report(summary: dict[str, Any]) -> str:
     lines = [
         "# Repeated Benchmark Aggregation",
         "",
+        "Diagnostic run: condition order was fixed and an external CDP browser was reused across task sessions.",
+        "Do not promote this repeated result as a headline improvement claim.",
+        "",
         f"Bootstrap samples: {summary.get('bootstrap_samples', 0)}",
         f"Bootstrap seed: {summary.get('bootstrap_seed', 0)}",
         f"CI method: {summary.get('ci_method', 'task-run bootstrap')}",
         "",
-        "Note: missing conditions are reported as missing, not zero-performance rows. Delta CIs use paired task-name clusters when available.",
+        "Note: rows are benchmark attempts, not necessarily completed agent executions. Missing conditions are reported as missing, not zero-performance rows. Delta CIs use paired task-name clusters when available.",
         "",
-        "| Condition | Success Rate Mean | 95% CI | Avg Steps | Avg Vision Calls | Avg Time | Delta vs A | Delta vs C Vision | Frontier |",
-        "|---|---:|---:|---:|---:|---:|---:|---:|---|",
+        "| Condition | Attempts | Success Rate Mean | 95% CI | Completion Rate | Infra Failures | Zero-Step | Avg Steps | Avg Vision Calls | Avg Time | Delta vs A | Delta vs C Vision | Frontier |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|",
     ]
     for condition in summary["conditions_order"]:
         item = summary["conditions"][condition]
@@ -467,7 +556,8 @@ def build_markdown_report(summary: dict[str, Any]) -> str:
         delta_c = item.get("delta_vs_C_full_always") or {}
         frontier = "yes" if item["frontier"]["is_pareto_candidate"] else "no"
         lines.append(
-            f"| {condition} | {_fmt(item['success_rate_mean'])} | {_fmt_ci(ci)} "
+            f"| {condition} | {item.get('attempts', item['records'])} | {_fmt(item['success_rate_mean'])} | {_fmt_ci(ci)} "
+            f"| {_fmt(item.get('completion_rate'))} | {item.get('infra_failure_count', 0)} | {item.get('zero_step_count', 0)} "
             f"| {_fmt(item['avg_steps'])} | {_fmt(item['avg_vision_calls'])} | {_fmt(item['avg_time_seconds'], 's')} "
             f"| {_fmt_delta(delta_a.get('success_rate'))} | {_fmt_delta(delta_c.get('vision_calls'), 2)} | {frontier} |"
         )

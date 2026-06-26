@@ -10,6 +10,8 @@ import asyncio
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 
@@ -189,6 +191,31 @@ class TestTitleMatches:
 
     def test_empty_title_fails(self):
         assert bc.title_matches("", "anything") is False
+
+
+class TestFailureType:
+    def test_distinguishes_outer_and_internal_timeout(self):
+        assert bc.classify_failure_type(success=False, error="Outer deadline (240s)") == "outer_deadline"
+        assert bc.classify_failure_type(success=False, error="Internal timeout before outer deadline") == (
+            "internal_timeout"
+        )
+
+    def test_distinguishes_verifier_and_objective_failure(self):
+        assert bc.classify_failure_type(success=False, verify_detail="verify error: page closed") == "verifier_error"
+        assert bc.classify_failure_type(success=False, error="", verify_detail="url mismatch") == (
+            "objective_verification_failed"
+        )
+
+    def test_wraps_agent_internal_asyncio_timeout_before_outer_deadline(self):
+        class TimeoutAgent:
+            async def run(self, max_steps: int):  # noqa: ARG002
+                raise asyncio.TimeoutError("llm backend timeout")
+
+        with pytest.raises(Exception) as exc_info:
+            _run(bc._run_agent(TimeoutAgent(), bc.TASKS[0]))  # noqa: SLF001
+
+        assert exc_info.value.__class__.__name__ == "_InternalAgentTimeoutError"
+        assert str(exc_info.value) == "llm backend timeout"
 
 
 # ── live_hn_top verifier (with monkeypatched fetch) ─────────────────────────
